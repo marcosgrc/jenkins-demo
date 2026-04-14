@@ -9,10 +9,14 @@ import es.codeurjc.repository.TransactionRepository;
 import es.codeurjc.service.AccountService;
 import es.codeurjc.service.RandomService;
 import es.codeurjc.service.notifications.EmailNotificationService;
+import es.codeurjc.service.notifications.NotificationService;
 import es.codeurjc.service.notifications.SmsNotificationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Arrays;
@@ -23,6 +27,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
@@ -39,8 +44,11 @@ public class AccountServiceTest {
             smsService, randomService);
 
     private User user;
+    private User user2;
     private Account account;
+    private Account account2;
     private final String accountNumber = "ES0123456789";
+    private final String accountNumber2 = "ES9876543210";
 
     @BeforeEach
     void setUp() {
@@ -48,8 +56,15 @@ public class AccountServiceTest {
         user.setUsername("testuser");
         user.setEmail("test@test.com");
 
+        user2 = new User();
+        user2.setUsername("testuser2");
+        user2.setEmail("test2@test2.com");
+
         account = new Account(accountNumber, Account.AccountType.SAVINGS, 1000.0);
         account.setUser(user);
+
+        account2 = new Account(accountNumber2, Account.AccountType.SAVINGS, 1000.0);
+        account2.setUser(user2);
     }
 
     // --- Tests for deposit(String accountNumber, double amount, String
@@ -510,4 +525,254 @@ public class AccountServiceTest {
         verifyNoInteractions(smsService);
     }
 
+    // --- Tests for transfer(String fromAccountNumber, String toAccountNumber, double amount) ---
+
+    /*
+    @Test
+    void transfer_amountZero_throwsException() {
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            accountService.transfer(accountNumber, accountNumber2, 0.0);
+        });
+        assertEquals("Amount must be positive", exception.getMessage());
+    }
+
+    @Test
+    void transfer_amountNegative_throwsException() {
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            accountService.transfer(accountNumber, accountNumber2, -1.0);
+        });
+        assertEquals("Amount must be positive", exception.getMessage());
+    }
+
+    @Test
+    void transfer_amountGraterThan20000_throwsException() {
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            accountService.transfer(accountNumber, accountNumber2, 30000);
+        });
+        assertEquals("Amount exceeds maximum transfer limit", exception.getMessage());
+    }
+    */
+    @ParameterizedTest(name = "Cantidad {0} debe lanzar error: {1}")
+    @CsvSource({
+        "0.0, 'Amount must be positive'",
+        "-1.0, 'Amount must be positive'",
+        "30000.0, 'Amount exceeds maximum transfer limit'"
+    })
+    void transfer_invalidAmounts_throwsException(double amount, String expectedMessage) {
+        // WHEN & THEN
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            accountService.transfer(accountNumber, accountNumber2, amount);
+        });
+
+        assertEquals(expectedMessage, exception.getMessage());
+    }
+
+    @Test
+    void transfer_sameAccount_throwsException() {
+        //GIVEN
+        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.of(account));
+
+        //WHEN & THEN
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            accountService.transfer(accountNumber, accountNumber, 500);
+        });
+        assertEquals("Cannot transfer to same account", exception.getMessage());
+    }
+
+    @Test
+    void transfer_notEnoughBalance_throwsException() {
+        //GIVEN
+        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.of(account));
+        when(accountRepository.findByAccountNumber(accountNumber2)).thenReturn(Optional.of(account2));
+
+        //WHEN & THEN
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            accountService.transfer(accountNumber, accountNumber2, 2000);
+        });
+        assertEquals("Insufficient funds", exception.getMessage());
+    }
+
+    /*
+    @Test
+    void transfer_senderAccountNotFound_throwsException() {
+        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.empty());
+        when(accountRepository.findByAccountNumber(accountNumber2)).thenReturn(Optional.of(account2));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            accountService.transfer(accountNumber, accountNumber2, 500);
+        });
+        assertEquals("Account not found", exception.getMessage());
+    }
+
+    @Test
+    void transfer_receiverAccountNotFound_throwsException() {
+        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.of(account));
+        when(accountRepository.findByAccountNumber(accountNumber2)).thenReturn(Optional.empty());
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            accountService.transfer(accountNumber, accountNumber2, 500);
+        });
+        assertEquals("Account not found", exception.getMessage());
+    }
+    */
+    @ParameterizedTest(name = "Lanza error cuando origen existe={0} y destino existe={1}")
+    @CsvSource({
+        "false, true",  // 1) Doesn't exist the origin account
+        "true, false"   // 2)Doesn't exist the destination account
+    })
+    void transfer_accountNotFound_throwsException(boolean fromExists, boolean toExists) {
+        // GIVEN
+        when(accountRepository.findByAccountNumber(accountNumber))
+                    .thenReturn(fromExists ? Optional.of(account) : Optional.empty());
+
+        if (fromExists) {
+            when(accountRepository.findByAccountNumber(accountNumber2))
+                    .thenReturn(toExists ? Optional.of(account2) : Optional.empty());
+        }
+
+        // WHEN & THEN
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
+            accountService.transfer(accountNumber, accountNumber2, 500);
+        });
+
+        assertEquals("Account not found", exception.getMessage());
+    }
+
+    /*
+    @Test
+    void transfer_validParametersAndEmailNotifications_success() {
+        //GIVEN
+        user.setNotificationType(User.NotificationType.EMAIL);
+        user2.setNotificationType(User.NotificationType.EMAIL);
+        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.of(account));
+        when(accountRepository.findByAccountNumber(accountNumber2)).thenReturn(Optional.of(account2));
+        when(accountRepository.save(account)).thenReturn(account);
+        when(accountRepository.save(account2)).thenReturn(account2);
+
+        //WHEN
+        accountService.transfer(accountNumber, accountNumber2, 500);
+
+        //THEN
+        assertEquals(500.0, account.getBalance());
+        assertEquals(1500.0, account2.getBalance());
+
+        verify(transactionRepository, times(2)).save(any(Transaction.class));
+        verify(accountRepository).save(account);
+        verify(accountRepository).save(account2);
+        verify(emailService).sendNotification(
+                eq(user),
+                eq(Notification.NotificationType.TRANSFER),
+                eq("Transfer Sent"),
+                eq("Transfer of 500,00 EUR to ES9876543210. New balance: 500,00 EUR"));
+        verify(emailService).sendNotification(
+                eq(user2),
+                eq(Notification.NotificationType.TRANSFER),
+                eq("Transfer Received"),
+                eq("Transfer of 500,00 EUR from ES0123456789. New balance: 1500,00 EUR"));
+        verifyNoInteractions(smsService);
+    }
+    
+    @Test
+    void transfer_validParametersAndSMSNotifications_success() {
+        //GIVEN
+        user.setNotificationType(User.NotificationType.SMS);
+        user2.setNotificationType(User.NotificationType.SMS);
+        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.of(account));
+        when(accountRepository.findByAccountNumber(accountNumber2)).thenReturn(Optional.of(account2));
+        when(accountRepository.save(account)).thenReturn(account);
+        when(accountRepository.save(account2)).thenReturn(account2);
+
+        //WHEN
+        accountService.transfer(accountNumber, accountNumber2, 500);
+
+        //THEN
+        assertEquals(500.0, account.getBalance());
+        assertEquals(1500.0, account2.getBalance());
+
+        verify(transactionRepository, times(2)).save(any(Transaction.class));
+        verify(accountRepository).save(account);
+        verify(accountRepository).save(account2);
+        verify(smsService).sendNotification(
+                eq(user),
+                eq(Notification.NotificationType.TRANSFER),
+                eq("Transfer Sent"),
+                eq("Transfer of 500,00 EUR to ES9876543210. New balance: 500,00 EUR"));
+        verify(smsService).sendNotification(
+                eq(user2),
+                eq(Notification.NotificationType.TRANSFER),
+                eq("Transfer Received"),
+                eq("Transfer of 500,00 EUR from ES0123456789. New balance: 1500,00 EUR"));
+        verifyNoInteractions(emailService);
+    }
+
+    @Test
+    void transfer_validParametersAndNoNotifications_success() {
+        //GIVEN
+        user.setNotificationType(null);
+        user2.setNotificationType(null);
+        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.of(account));
+        when(accountRepository.findByAccountNumber(accountNumber2)).thenReturn(Optional.of(account2));
+        when(accountRepository.save(account)).thenReturn(account);
+        when(accountRepository.save(account2)).thenReturn(account2);
+
+        //WHEN
+        accountService.transfer(accountNumber, accountNumber2, 500);
+
+        //THEN
+        assertEquals(500.0, account.getBalance());
+        assertEquals(1500.0, account2.getBalance());
+
+        verify(transactionRepository, times(2)).save(any(Transaction.class));
+        verify(accountRepository).save(account);
+        verify(accountRepository).save(account2);
+        verifyNoInteractions(emailService);
+        verifyNoInteractions(smsService);
+    }
+    */
+    @ParameterizedTest(name = "Transferencia exitosa con notificación: {0}")
+    @ValueSource(strings = {"EMAIL", "SMS", "NONE"})
+    void transfer_validParametersAndSuccess_allNotificationScenarios(String notificationTypeStr) {
+        // --- GIVEN ---
+        // We convert the string into a type of notification or null
+        User.NotificationType type = notificationTypeStr.equals("NONE") ? null : User.NotificationType.valueOf(notificationTypeStr);
+
+        user.setNotificationType(type);
+        user2.setNotificationType(type);
+        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.of(account));
+        when(accountRepository.findByAccountNumber(accountNumber2)).thenReturn(Optional.of(account2));
+        when(accountRepository.save(account)).thenReturn(account);
+        when(accountRepository.save(account2)).thenReturn(account2);
+
+        //WHEN
+        accountService.transfer(accountNumber, accountNumber2, 500);
+
+        //THEN
+        assertEquals(500.0, account.getBalance());
+        assertEquals(1500.0, account2.getBalance());
+
+        verify(transactionRepository, times(2)).save(any(Transaction.class));
+        verify(accountRepository).save(account);
+        verify(accountRepository).save(account2);
+
+        NotificationService targetService = (type == User.NotificationType.EMAIL) ? emailService : 
+                                    (type == User.NotificationType.SMS) ? smsService : null;
+        if (targetService != null) {
+            verify(targetService).sendNotification(
+                    eq(user),
+                    eq(Notification.NotificationType.TRANSFER),
+                    eq("Transfer Sent"),
+                    eq("Transfer of 500,00 EUR to ES9876543210. New balance: 500,00 EUR"));
+            verify(targetService).sendNotification(
+                    eq(user2),
+                    eq(Notification.NotificationType.TRANSFER),
+                    eq("Transfer Received"),
+                    eq("Transfer of 500,00 EUR from ES0123456789. New balance: 1500,00 EUR"));
+            verifyNoInteractions(targetService == emailService ? smsService : emailService);
+        } else {
+            verifyNoInteractions(emailService, smsService);
+        }
+    }
 }
