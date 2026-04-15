@@ -1,6 +1,8 @@
 package es.codeurjc.service;
 
 import es.codeurjc.model.Account;
+import es.codeurjc.model.Amount;
+import es.codeurjc.model.AccountNumber;
 import es.codeurjc.model.User;
 import es.codeurjc.model.Notification;
 import es.codeurjc.model.Transaction;
@@ -42,8 +44,8 @@ public class AccountService {
      * Create a new account
      */
     public Account createAccount(User user, Account.AccountType accountType) {
-        String accountNumber = generateAccountNumber();
-        Account account = new Account(accountNumber, accountType, 0);
+        AccountNumber accountNumber = generateAccountNumber();
+        Account account = new Account(accountNumber.getValue(), accountType, 0);
         account.setUser(user);
         return accountRepository.save(account);
     }
@@ -51,15 +53,15 @@ public class AccountService {
     /**
      * Generate account number
      */
-    private String generateAccountNumber() {
-        return String.format("ES%010d", randomService.nextInt(1000000000));
+    private AccountNumber generateAccountNumber() {
+        return new AccountNumber(String.format("ES%010d", randomService.nextInt(1000000000)));
     }
 
     /**
      * Get account by account number
      */
-    public Account getAccount(String accountNumber) {
-        return accountRepository.findByAccountNumber(accountNumber)
+    public Account getAccount(AccountNumber accountNumber) {
+        return accountRepository.findByAccountNumber(accountNumber.getValue())
                 .orElseThrow(() -> new IllegalArgumentException("Account not found"));
     }
 
@@ -74,27 +76,17 @@ public class AccountService {
      * Deposit money into account
      */
     @Transactional
-    public Account deposit(String accountNumber, double amount, String description) {
-        if (amount == 0) {
-            throw new IllegalArgumentException("Amount must be positive");
-        }
-        if (amount < 0) {
-            throw new IllegalArgumentException("Amount must be positive");
-        }
-        if (amount > 10000) {
+    public Account deposit(AccountNumber accountNumber, Amount amount, String description) {
+        if (amount.getValue() > 10000) {
             throw new IllegalArgumentException("Amount exceeds maximum deposit limit");
         }
-        // Rama inalcanzable
-        if (amount > 50000) {
-            throw new IllegalArgumentException("Amount exceeds maximum deposit limit");
-        }
-
-        Account account = getAccount(accountNumber);
-        account.deposit(amount);
+       
+        Account account = getAccount(new AccountNumber(accountNumber.getValue()));
+        account.deposit(amount.getValue());
 
         // Record transaction
         Transaction transaction = new Transaction(account, Transaction.TransactionType.DEPOSIT,
-                amount, description);
+                amount.getValue(), description);
         transactionRepository.save(transaction);
 
         Account savedAccount = accountRepository.save(account);
@@ -103,7 +95,7 @@ public class AccountService {
         sendNotification(account.getUser(), Notification.NotificationType.DEPOSIT,
                 "Deposit Confirmation", "Deposit of %.2f EUR. New balance: %.2f EUR",
                 "Deposit Confirmation", "Deposit: %.2f EUR. Balance: %.2f EUR",
-                amount, account.getBalance()
+                amount.getValue(), account.getBalance()
         );
 
         return savedAccount;
@@ -113,27 +105,18 @@ public class AccountService {
      * Quick deposit without description
      */
     @Transactional
-    public Account deposit(String accountNumber, double amount) {
-        if (amount == 0) {
-            throw new IllegalArgumentException("Amount must be positive");
-        }
-        if (amount < 0) {
-            throw new IllegalArgumentException("Amount must be positive");
-        }
-        if (amount > 10000) {
-            throw new IllegalArgumentException("Amount exceeds maximum deposit limit");
-        }
-        // Rama inalcanzable
-        if (amount > 50000) {
+    public Account deposit(AccountNumber accountNumber, Amount amount) {
+
+        if (amount.getValue() > 10000) {
             throw new IllegalArgumentException("Amount exceeds maximum deposit limit");
         }
 
         Account account = getAccount(accountNumber);
-        account.deposit(amount);
+        account.deposit(amount.getValue());
 
         // Record transaction
         Transaction transaction = new Transaction(account, Transaction.TransactionType.DEPOSIT,
-                amount, "Quick deposit");
+                amount.getValue(), "Quick deposit");
         transactionRepository.save(transaction);
 
         Account savedAccount = accountRepository.save(account);
@@ -142,7 +125,7 @@ public class AccountService {
         sendNotification(account.getUser(), Notification.NotificationType.DEPOSIT,
                 "Deposit Confirmation", "Deposit of %.2f EUR. New balance: %.2f EUR",
                 "Deposit Confirmation", "Deposit: %.2f EUR. Balance: %.2f EUR",
-                amount, account.getBalance()
+                amount.getValue(), account.getBalance()
         );
 
         return savedAccount;
@@ -152,28 +135,16 @@ public class AccountService {
      * Withdraw money from account
      */
     @Transactional
-    public Account withdraw(String accountNumber, double amount, String description) {
-        if (amount <= 0) {
-            throw new IllegalArgumentException("Amount must be positive");
-        }
-
-        if (amount > 5000) {
-            throw new IllegalArgumentException("Amount exceeds maximum withdrawal limit");
-        }
+    public Account withdraw(AccountNumber accountNumber, Amount amount, String description) {
 
         Account account = getAccount(accountNumber);
         Account seccondAccount;
 
-        // Check balance
-        if (account.getBalance() < amount) {
-            throw new IllegalArgumentException("Insufficient funds");
-        }
-
-        account.withdraw(amount);
+        account.withdraw(amount.getValue());
 
         // Record transaction
         Transaction transaction = new Transaction(account, Transaction.TransactionType.WITHDRAWAL,
-                amount, description);
+                amount.getValue(), description);
         transactionRepository.save(transaction);
 
         Account savedAccount = accountRepository.save(account);
@@ -192,44 +163,33 @@ public class AccountService {
      * Transfer money between accounts
      */
     @Transactional
-    public void transfer(String fromAccountNumber, String toAccountNumber, double amount) {
-        if (amount <= 0) {
-            throw new IllegalArgumentException("Amount must be positive");
-        }
-        if (amount > 20000) {
-            throw new IllegalArgumentException("Amount exceeds maximum transfer limit");
-        }
-
+    public void transfer(AccountNumber fromAccountNumber, AccountNumber toAccountNumber, Amount amount) {
+        
         Account m = getAccount(fromAccountNumber);
         Account o = getAccount(toAccountNumber);
 
         // Validate same account
-        if (m.getAccountNumber() == o.getAccountNumber()) {
+        if (fromAccountNumber.equals(toAccountNumber)) {
             throw new IllegalArgumentException("Cannot transfer to same account");
         }
 
-        // Check balance
-        if (m.getBalance() < amount) {
-            throw new IllegalArgumentException("Insufficient funds");
-        }
-
         // Perform transfer
-        m.withdraw(amount);
-        o.deposit(amount);
+        m.withdraw(amount.getValue());
+        o.deposit(amount.getValue());
 
         // Record transactions
         Transaction sentTransaction = new Transaction(m,
                 Transaction.TransactionType.TRANSFER_SENT,
-                amount,
+                amount.getValue(),
                 "Transfer to " + toAccountNumber);
-        sentTransaction.setDestinationAccountNumber(toAccountNumber);
+        sentTransaction.setDestinationAccountNumber(toAccountNumber.getValue());
         transactionRepository.save(sentTransaction);
 
         Transaction receivedTransaction = new Transaction(o,
                 Transaction.TransactionType.TRANSFER_RECEIVED,
-                amount,
+                amount.getValue(),
                 "Transfer from " + fromAccountNumber);
-        receivedTransaction.setDestinationAccountNumber(fromAccountNumber);
+        receivedTransaction.setDestinationAccountNumber(fromAccountNumber.getValue());
         transactionRepository.save(receivedTransaction);
 
         accountRepository.save(m);
@@ -239,21 +199,21 @@ public class AccountService {
         sendNotification(m.getUser(), Notification.NotificationType.TRANSFER,
                 "Transfer Sent", "Transfer of %.2f EUR to %s. New balance: %.2f EUR",
                 "Transfer Sent", "Transfer of %.2f EUR to %s. New balance: %.2f EUR",
-                amount, toAccountNumber, m.getBalance()
+                amount.getValue(), toAccountNumber, m.getBalance()
         );
 
         // Notification to the recipient
         sendNotification(o.getUser(), Notification.NotificationType.TRANSFER,
                 "Transfer Received", "Transfer of %.2f EUR from %s. New balance: %.2f EUR",
                 "Transfer Received", "Transfer of %.2f EUR from %s. New balance: %.2f EUR",
-                amount, fromAccountNumber, o.getBalance()
+                amount.getValue(), fromAccountNumber, o.getBalance()
         );
     }
 
     /**
      * Delete account
      */
-    public void rm(String accountNumber) {
+    public void rm(AccountNumber accountNumber) {
         Account account = getAccount(accountNumber);
 
         if (account.getBalance() != 0) {
@@ -266,7 +226,7 @@ public class AccountService {
     /**
      * Get account balance
      */
-    public double getBalance(String accountNumber) {
+    public double getBalance(AccountNumber accountNumber) {
         Account account = getAccount(accountNumber);
         return account.getBalance();
     }
@@ -274,7 +234,7 @@ public class AccountService {
     /**
      * Get account transactions
      */
-    public List<Transaction> getTransactions(String accountNumber) {
+    public List<Transaction> getTransactions(AccountNumber accountNumber) {
         Account account = getAccount(accountNumber);
         return transactionRepository.findByAccountOrderByTimestampDesc(account);
     }

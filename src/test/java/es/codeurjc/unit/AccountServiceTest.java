@@ -1,6 +1,8 @@
 package es.codeurjc.unit;
 
 import es.codeurjc.model.Account;
+import es.codeurjc.model.AccountNumber;
+import es.codeurjc.model.Amount;
 import es.codeurjc.model.Notification;
 import es.codeurjc.model.Transaction;
 import es.codeurjc.model.User;
@@ -48,8 +50,9 @@ public class AccountServiceTest {
     private User user2;
     private Account account;
     private Account account2;
-    private final String accountNumber = "ES0123456789";
-    private final String accountNumber2 = "ES9876543210";
+    private final AccountNumber accountNumber = new AccountNumber("ES0123456789");
+    private final AccountNumber accountNumber2 = new AccountNumber("ES9876543210");
+    private final Amount amount100 = new Amount(100.0);
 
     @BeforeEach
     void setUp() {
@@ -61,10 +64,10 @@ public class AccountServiceTest {
         user2.setUsername("testuser2");
         user2.setEmail("test2@test2.com");
 
-        account = new Account(accountNumber, Account.AccountType.SAVINGS, 1000.0);
+        account = new Account(accountNumber.getValue(), Account.AccountType.SAVINGS, 1000.0);
         account.setUser(user);
 
-        account2 = new Account(accountNumber2, Account.AccountType.SAVINGS, 1000.0);
+        account2 = new Account(accountNumber2.getValue(), Account.AccountType.SAVINGS, 1000.0);
         account2.setUser(user2);
     }
 
@@ -93,7 +96,7 @@ public class AccountServiceTest {
 
         // Verificación de comportamiento básico para asegurar que las dependencias
         // internas funcionan
-        when(localRepo.findByAccountNumber(accountNumber)).thenReturn(Optional.of(account));
+        when(localRepo.findByAccountNumber(accountNumber.getValue())).thenReturn(Optional.of(account));
         assertEquals(1000.0, service.getBalance(accountNumber));
     }
 
@@ -123,44 +126,45 @@ public class AccountServiceTest {
 
     @Test
     void depositWithDescription_amountZero_throwsException() {
-
+        //Exception thrown from Amount class constructor when trying to create Amount with 0.0
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            accountService.deposit(accountNumber, 0.0, "Test deposit");
+            accountService.deposit(accountNumber, new Amount(0.0), "Test deposit");
         });
         assertEquals("Amount must be positive", exception.getMessage());
     }
 
     @Test
     void depositWithDescription_amountNegative_throwsException() {
+        //Exception thrown from Amount class constructor when trying to create Amount with -50.0
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            accountService.deposit(accountNumber, -50.0, "Test deposit");
+            accountService.deposit(accountNumber, new Amount(-50.0), "Test deposit");
         });
-        assertEquals("Amount must be positive", exception.getMessage());
+        assertEquals("La cantidad no puede ser negativa", exception.getMessage());
     }
 
     @Test
     void depositWithDescription_amountGreaterThan10000_throwsException() {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            accountService.deposit(accountNumber, 15000.0, "Test deposit");
+            accountService.deposit(accountNumber, new Amount(15000.0), "Test deposit");
         });
-        assertEquals("Amount exceeds maximum deposit limit", exception.getMessage());
+        assertEquals("La cantidad no puede superar los 20.000€", exception.getMessage());
     }
 
     @Test
     void depositWithDescription_amountGreaterThan50000_throwsException() {
         // This branch in the service is unreachable because > 10000 throws first
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            accountService.deposit(accountNumber, 60000.0, "Test deposit");
+            accountService.deposit(accountNumber, new Amount(60000.0), "Test deposit");
         });
-        assertEquals("Amount exceeds maximum deposit limit", exception.getMessage());
+        assertEquals("La cantidad no puede superar los 20.000€", exception.getMessage());
     }
 
     @Test
     void depositWithDescription_accountNotFound_throwsException() {
-        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.empty());
+        when(accountRepository.findByAccountNumber(accountNumber.getValue())).thenReturn(Optional.empty());
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            accountService.deposit(accountNumber, 100.0, "Test deposit");
+            accountService.deposit(accountNumber, amount100, "Test deposit");
         });
         assertEquals("Account not found", exception.getMessage());
     }
@@ -168,10 +172,10 @@ public class AccountServiceTest {
     @Test
     void depositWithDescription_validAmountAndEmailNotification_success() {
         user.setNotificationType(User.NotificationType.EMAIL);
-        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.of(account));
+        when(accountRepository.findByAccountNumber(accountNumber.getValue())).thenReturn(Optional.of(account));
         when(accountRepository.save(any(Account.class))).thenReturn(account);
 
-        Account savedAccount = accountService.deposit(accountNumber, 100.0, "Test deposit");
+        Account savedAccount = accountService.deposit(accountNumber, new Amount(100.0), "Test deposit");
 
         assertEquals(1100.0, savedAccount.getBalance());
 
@@ -188,10 +192,10 @@ public class AccountServiceTest {
     @Test
     void depositWithDescription_validAmountAndSmsNotification_success() {
         user.setNotificationType(User.NotificationType.SMS);
-        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.of(account));
+        when(accountRepository.findByAccountNumber(accountNumber.getValue())).thenReturn(Optional.of(account));
         when(accountRepository.save(any(Account.class))).thenReturn(account);
 
-        Account savedAccount = accountService.deposit(accountNumber, 100.0, "Test deposit");
+        Account savedAccount = accountService.deposit(accountNumber, new Amount(100.0), "Test deposit");
 
         assertEquals(1100.0, savedAccount.getBalance());
 
@@ -208,10 +212,10 @@ public class AccountServiceTest {
     @Test
     void depositWithDescription_validAmountAndNoNotification_success() {
         user.setNotificationType(null);
-        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.of(account));
+        when(accountRepository.findByAccountNumber(accountNumber.getValue())).thenReturn(Optional.of(account));
         when(accountRepository.save(any(Account.class))).thenReturn(account);
 
-        Account savedAccount = accountService.deposit(accountNumber, 100.0, "Test deposit");
+        Account savedAccount = accountService.deposit(accountNumber, new Amount(100.0), "Test deposit");
 
         assertEquals(1100.0, savedAccount.getBalance());
 
@@ -225,16 +229,18 @@ public class AccountServiceTest {
 
     @Test
     void depositNoDescription_amountZero_throwsException() {
+        // Exception thrown from Amount class constructor when trying to create Amount with 0.0
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            accountService.deposit(accountNumber, 0.0);
+            accountService.deposit(accountNumber, new Amount(0.0));
         });
         assertEquals("Amount must be positive", exception.getMessage());
     }
 
     @Test
     void depositNoDescription_amountNegative_throwsException() {
+        // Exception thrown from Amount class constructor when trying to create Amount with -50.0
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            accountService.deposit(accountNumber, -50.0);
+            accountService.deposit(accountNumber, new Amount(-50.0));
         });
         assertEquals("Amount must be positive", exception.getMessage());
     }
@@ -242,7 +248,7 @@ public class AccountServiceTest {
     @Test
     void depositNoDescription_amountGreaterThan10000_throwsException() {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            accountService.deposit(accountNumber, 15000.0);
+            accountService.deposit(accountNumber, new Amount(15000.0));
         });
         assertEquals("Amount exceeds maximum deposit limit", exception.getMessage());
     }
@@ -251,17 +257,17 @@ public class AccountServiceTest {
     void depositNoDescription_amountGreaterThan50000_throwsException() {
         // This branch in the service is unreachable because > 10000 throws first
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            accountService.deposit(accountNumber, 60000.0);
+            accountService.deposit(accountNumber, new Amount(60000.0));
         });
         assertEquals("Amount exceeds maximum deposit limit", exception.getMessage());
     }
 
     @Test
     void depositNoDescription_accountNotFound_throwsException() {
-        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.empty());
+        when(accountRepository.findByAccountNumber(accountNumber.getValue())).thenReturn(Optional.empty());
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            accountService.deposit(accountNumber, 100.0);
+            accountService.deposit(accountNumber, amount100);
         });
         assertEquals("Account not found", exception.getMessage());
     }
@@ -269,10 +275,10 @@ public class AccountServiceTest {
     @Test
     void depositNoDescription_validAmountAndEmailNotification_success() {
         user.setNotificationType(User.NotificationType.EMAIL);
-        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.of(account));
+        when(accountRepository.findByAccountNumber(accountNumber.getValue())).thenReturn(Optional.of(account));
         when(accountRepository.save(any(Account.class))).thenReturn(account);
 
-        Account savedAccount = accountService.deposit(accountNumber, 100.0);
+        Account savedAccount = accountService.deposit(accountNumber, amount100);
 
         assertEquals(1100.0, savedAccount.getBalance());
 
@@ -289,10 +295,10 @@ public class AccountServiceTest {
     @Test
     void depositNoDescription_validAmountAndSmsNotification_success() {
         user.setNotificationType(User.NotificationType.SMS);
-        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.of(account));
+        when(accountRepository.findByAccountNumber(accountNumber.getValue())).thenReturn(Optional.of(account));
         when(accountRepository.save(any(Account.class))).thenReturn(account);
 
-        Account savedAccount = accountService.deposit(accountNumber, 100.0);
+        Account savedAccount = accountService.deposit(accountNumber, amount100);
 
         assertEquals(1100.0, savedAccount.getBalance());
 
@@ -309,10 +315,10 @@ public class AccountServiceTest {
     @Test
     void depositNoDescription_validAmountAndNoNotification_success() {
         user.setNotificationType(null);
-        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.of(account));
+        when(accountRepository.findByAccountNumber(accountNumber.getValue())).thenReturn(Optional.of(account));
         when(accountRepository.save(any(Account.class))).thenReturn(account);
 
-        Account savedAccount = accountService.deposit(accountNumber, 100.0);
+        Account savedAccount = accountService.deposit(accountNumber, amount100);
 
         assertEquals(1100.0, savedAccount.getBalance());
 
@@ -331,8 +337,9 @@ public class AccountServiceTest {
         when(accountRepository.findByAccountNumber("ES000")).thenReturn(Optional.empty());
 
         // WHEN & THEN
+        // Exception thrown from AccountNumber constructor when trying to create AccountNumber with "ES000"
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            accountService.getAccount("ES000");
+            accountService.getAccount(new AccountNumber("ES000"));
         });
         assertEquals("Account not found", exception.getMessage());
     }
@@ -344,7 +351,8 @@ public class AccountServiceTest {
         when(accountRepository.findByAccountNumber("ES123")).thenReturn(Optional.of(account));
 
         // WHEN
-        Account result = accountService.getAccount("ES123");
+        // Exception thrown from AccountNumber constructor when trying to create AccountNumber with "ES123" because it doesn't have 10 digits, but we want to test getAccount, so we catch that exception and ignore it to proceed with the test
+        Account result = accountService.getAccount(new AccountNumber("ES123"));
 
         // THEN
         assertEquals("ES123", result.getAccountNumber());
@@ -387,14 +395,14 @@ public class AccountServiceTest {
     @Test
     void getBalance_validAccountNumber_returnsBalance() {
         // GIVEN
-        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.of(account));
+        when(accountRepository.findByAccountNumber(accountNumber.getValue())).thenReturn(Optional.of(account));
 
         // WHEN
         double balance = accountService.getBalance(accountNumber);
 
         // THEN
         assertEquals(1000.0, balance);
-        verify(accountRepository).findByAccountNumber(accountNumber);
+        verify(accountRepository).findByAccountNumber(accountNumber.getValue());
     }
 
     @Test
@@ -403,8 +411,9 @@ public class AccountServiceTest {
         when(accountRepository.findByAccountNumber("INVALID")).thenReturn(Optional.empty());
 
         // WHEN & THEN
+        // Exception thrown from AccountNumber constructor when trying to create AccountNumber with "INVALID"
         assertThrows(IllegalArgumentException.class, () -> {
-            accountService.getBalance("INVALID");
+            accountService.getBalance(new AccountNumber("INVALID"));
         });
     }
 
@@ -413,7 +422,7 @@ public class AccountServiceTest {
     @Test
     void getTransactions_validAccountWithTransactions_returnsList() {
         // GIVEN
-        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.of(account));
+        when(accountRepository.findByAccountNumber(accountNumber.getValue())).thenReturn(Optional.of(account));
 
         List<Transaction> transactions = Arrays.asList(
                 new Transaction(account, Transaction.TransactionType.DEPOSIT, 100.0, "Test 1"),
@@ -432,7 +441,7 @@ public class AccountServiceTest {
     @Test
     void getTransactions_noTransactions_returnsEmptyList() {
         // GIVEN
-        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.of(account));
+        when(accountRepository.findByAccountNumber(accountNumber.getValue())).thenReturn(Optional.of(account));
         when(transactionRepository.findByAccountOrderByTimestampDesc(account)).thenReturn(Collections.emptyList());
 
         // WHEN
@@ -448,8 +457,9 @@ public class AccountServiceTest {
         when(accountRepository.findByAccountNumber("NON_EXISTENT")).thenReturn(Optional.empty());
 
         // WHEN & THEN
+        // Exception thrown from AccountNumber constructor when trying to create AccountNumber with "NON_EXISTENT"
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            accountService.getTransactions("NON_EXISTENT");
+            accountService.getTransactions(new AccountNumber("NON_EXISTENT"));
         });
         assertEquals("Account not found", exception.getMessage());
     }
@@ -461,7 +471,7 @@ public class AccountServiceTest {
         // GIVEN
         account.setBalance(100.0);
 
-        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.of(account));
+        when(accountRepository.findByAccountNumber(accountNumber.getValue())).thenReturn(Optional.of(account));
 
         // WHEN & THEN
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
@@ -478,7 +488,7 @@ public class AccountServiceTest {
         // GIVEN
         account.setBalance(0.0);
 
-        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.of(account));
+        when(accountRepository.findByAccountNumber(accountNumber.getValue())).thenReturn(Optional.of(account));
 
         // WHEN
         accountService.rm(accountNumber);
@@ -490,7 +500,7 @@ public class AccountServiceTest {
     @Test
     void rm_accountNotFound_throwsException() {
         // GIVEN
-        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.empty());
+        when(accountRepository.findByAccountNumber(accountNumber.getValue())).thenReturn(Optional.empty());
 
         // WHEN & THEN
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
@@ -509,13 +519,13 @@ public class AccountServiceTest {
     void withdraw_amountZeroOrNegative_throwsException() {
         // When & then
         IllegalArgumentException exceptionZero = assertThrows(IllegalArgumentException.class, () -> {
-            accountService.withdraw(accountNumber, 0.0, "Compra");
+            accountService.withdraw(accountNumber, new Amount(0.0), "Compra");
         });
         assertEquals("Amount must be positive", exceptionZero.getMessage());
 
         // When & then
         IllegalArgumentException exceptionNegative = assertThrows(IllegalArgumentException.class, () -> {
-            accountService.withdraw(accountNumber, -100.0, "Compra");
+            accountService.withdraw(accountNumber, new Amount(-100.0), "Compra");
         });
         assertEquals("Amount must be positive", exceptionNegative.getMessage());
     }
@@ -524,7 +534,7 @@ public class AccountServiceTest {
     void withdraw_amountExceedsLimit_throwsException() {
         // When & then
         IllegalArgumentException exceptionLimit = assertThrows(IllegalArgumentException.class, () -> {
-            accountService.withdraw(accountNumber, 5001.0, "Compra");
+            accountService.withdraw(accountNumber, new Amount(5001.0), "Compra");
         });
         assertEquals("Amount exceeds maximum withdrawal limit", exceptionLimit.getMessage());
     }
@@ -536,7 +546,7 @@ public class AccountServiceTest {
 
         // When & Then
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            accountService.withdraw("NON_EXISTENT", 100.0, "Compra");
+            accountService.withdraw(new AccountNumber("NON_EXISTENT"), new Amount(100.0), "Compra");
         });
         assertEquals("Account not found", exception.getMessage());
     }
@@ -544,11 +554,11 @@ public class AccountServiceTest {
     @Test
     void withdraw_insufficientFunds_throwsException() {
         // Given
-        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.of(account));
+        when(accountRepository.findByAccountNumber(accountNumber.getValue())).thenReturn(Optional.of(account));
 
         // When & then
         IllegalArgumentException exceptionFunds = assertThrows(IllegalArgumentException.class, () -> {
-            accountService.withdraw(accountNumber, 1500.0, "Compra");
+            accountService.withdraw(accountNumber, new Amount(1500.0), "Compra");
         });
         assertEquals("Insufficient funds", exceptionFunds.getMessage());
     }
@@ -557,11 +567,11 @@ public class AccountServiceTest {
     void withdraw_validAmountAndEmailNotification_success() {
         // Given
         user.setNotificationType(User.NotificationType.EMAIL);
-        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.of(account));
+        when(accountRepository.findByAccountNumber(accountNumber.getValue())).thenReturn(Optional.of(account));
         when(accountRepository.save(any(Account.class))).thenReturn(account);
 
         // When
-        Account result = accountService.withdraw(accountNumber, 200.0, "Compra");
+        Account result = accountService.withdraw(accountNumber, new Amount(200.0), "Compra");
 
         // Then
         assertEquals(800.0, result.getBalance());
@@ -579,11 +589,11 @@ public class AccountServiceTest {
     void withdraw_validAmountAndSmsNotification_success() {
         // Given
         user.setNotificationType(User.NotificationType.SMS);
-        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.of(account));
+        when(accountRepository.findByAccountNumber(accountNumber.getValue())).thenReturn(Optional.of(account));
         when(accountRepository.save(any(Account.class))).thenReturn(account);
 
         // When
-        accountService.withdraw(accountNumber, 50.0, "Compra");
+        accountService.withdraw(accountNumber, new Amount(50.0), "Compra");
 
         // Then
         verify(smsService).sendNotification(
@@ -598,11 +608,11 @@ public class AccountServiceTest {
     void withdraw_validAmountAndNoNotification_success() {
         // Given
         user.setNotificationType(null);
-        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.of(account));
+        when(accountRepository.findByAccountNumber(accountNumber.getValue())).thenReturn(Optional.of(account));
         when(accountRepository.save(any(Account.class))).thenReturn(account);
 
         // When
-        Account result = accountService.withdraw(accountNumber, 100.0, "Account not found");
+        Account result = accountService.withdraw(accountNumber, new Amount(100.0), "Account not found");
 
         // Then
         assertEquals(900.0, result.getBalance());
@@ -656,7 +666,7 @@ public class AccountServiceTest {
     void transfer_invalidAmounts_throwsException(double amount, String expectedMessage) {
         // WHEN & THEN
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            accountService.transfer(accountNumber, accountNumber2, amount);
+            accountService.transfer(accountNumber, accountNumber2, new Amount(amount));
         });
 
         assertEquals(expectedMessage, exception.getMessage());
@@ -665,11 +675,11 @@ public class AccountServiceTest {
     @Test
     void transfer_sameAccount_throwsException() {
         // GIVEN
-        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.of(account));
+        when(accountRepository.findByAccountNumber(accountNumber.getValue())).thenReturn(Optional.of(account));
 
         // WHEN & THEN
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            accountService.transfer(accountNumber, accountNumber, 500);
+            accountService.transfer(accountNumber, accountNumber, new Amount(500.0));
         });
         assertEquals("Cannot transfer to same account", exception.getMessage());
     }
@@ -677,12 +687,12 @@ public class AccountServiceTest {
     @Test
     void transfer_notEnoughBalance_throwsException() {
         // GIVEN
-        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.of(account));
-        when(accountRepository.findByAccountNumber(accountNumber2)).thenReturn(Optional.of(account2));
+        when(accountRepository.findByAccountNumber(accountNumber.getValue())).thenReturn(Optional.of(account));
+        when(accountRepository.findByAccountNumber(accountNumber2.getValue())).thenReturn(Optional.of(account2));
 
         // WHEN & THEN
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            accountService.transfer(accountNumber, accountNumber2, 2000);
+            accountService.transfer(accountNumber, accountNumber2, new Amount(2000.0));
         });
         assertEquals("Insufficient funds", exception.getMessage());
     }
@@ -723,17 +733,17 @@ public class AccountServiceTest {
     })
     void transfer_accountNotFound_throwsException(boolean fromExists, boolean toExists) {
         // GIVEN
-        when(accountRepository.findByAccountNumber(accountNumber))
+        when(accountRepository.findByAccountNumber(accountNumber.getValue()))
                 .thenReturn(fromExists ? Optional.of(account) : Optional.empty());
 
         if (fromExists) {
-            when(accountRepository.findByAccountNumber(accountNumber2))
+            when(accountRepository.findByAccountNumber(accountNumber2.getValue()))
                     .thenReturn(toExists ? Optional.of(account2) : Optional.empty());
         }
 
         // WHEN & THEN
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            accountService.transfer(accountNumber, accountNumber2, 500);
+            accountService.transfer(accountNumber, accountNumber2, new Amount(500.0));
         });
 
         assertEquals("Account not found", exception.getMessage());
@@ -846,13 +856,13 @@ public class AccountServiceTest {
 
         user.setNotificationType(type);
         user2.setNotificationType(type);
-        when(accountRepository.findByAccountNumber(accountNumber)).thenReturn(Optional.of(account));
-        when(accountRepository.findByAccountNumber(accountNumber2)).thenReturn(Optional.of(account2));
+        when(accountRepository.findByAccountNumber(accountNumber.getValue())).thenReturn(Optional.of(account));
+        when(accountRepository.findByAccountNumber(accountNumber2.getValue())).thenReturn(Optional.of(account2));
         when(accountRepository.save(account)).thenReturn(account);
         when(accountRepository.save(account2)).thenReturn(account2);
 
         // WHEN
-        accountService.transfer(accountNumber, accountNumber2, 500);
+        accountService.transfer(accountNumber, accountNumber2, new Amount(500.0));
 
         // THEN
         assertEquals(500.0, account.getBalance());
