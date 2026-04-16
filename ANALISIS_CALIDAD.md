@@ -165,7 +165,7 @@ A continuación, se detallan los problemas detectados en la clase `AccountServic
 
 
 ### Bad Smell 7: Switch Statement (Sentencias Condicionales Complejas)
-* **Ubicación:** `AccountService.java` - Dentro de los métodos `deposit`, `withdraw` y `transfer` - Líneas 103, 110, 152, 159, 202, 208, 267 y 273
+* **Ubicación:** `AccountService.java` - Métodos `deposit`, `withdraw` y `transfer` - Líneas 103, 110, 152, 159, 202, 208, 267 y 273
 
 * **Reporte de la issue:**
 
@@ -235,6 +235,7 @@ A continuación, se detallan los problemas detectados en la clase `AccountServic
 
   Para solucionar este bad smell se ha eliminado la comparación directa de los atributos internos de las entidades desde el servicio. En lugar de que `AccountService` extraiga los números de cuenta para compararlos mediante m.getAccountNumber() == o.getAccountNumber(), he delegado esta responsabilidad a la entidad `Account` implementando correctamente el método `equals()`. De esta forma, el servicio ahora simplemente invoca m.equals(o), respetando el encapsulamiento y reduciendo el acoplamiento.
 
+  <img width="600" height="278" alt="image" src="https://github.com/user-attachments/assets/c37be170-a846-4755-910c-7343d19e2245" />
   <img width="600" height="84" alt="image" src="https://github.com/user-attachments/assets/114c7765-3dc1-4a41-8272-9857ee4df159" />
 
 
