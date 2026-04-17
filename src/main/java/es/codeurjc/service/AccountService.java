@@ -165,47 +165,47 @@ public class AccountService {
     @Transactional
     public void transfer(AccountNumber fromAccountNumber, AccountNumber toAccountNumber, Amount amount) {
 
-        Account m = getAccount(fromAccountNumber);
-        Account o = getAccount(toAccountNumber);
+        Account fromAccount = getAccount(fromAccountNumber);
+        Account toAccount = getAccount(toAccountNumber);
 
         // Validate same account
-        if (m.getAccountNumber().equals(o.getAccountNumber())) {
+        if (fromAccount.getAccountNumber().equals(toAccount.getAccountNumber())) {
             throw new IllegalArgumentException("Cannot transfer to same account");
         }
 
         // Perform transfer
-        m.withdraw(amount.getValue());
-        o.deposit(amount.getValue());
+        fromAccount.withdraw(amount.getValue());
+        toAccount.deposit(amount.getValue());
 
         // Record transactions
-        Transaction sentTransaction = new Transaction(m,
+        Transaction sentTransaction = new Transaction(fromAccount,
                 Transaction.TransactionType.TRANSFER_SENT,
                 amount.getValue(),
                 "Transfer to " + toAccountNumber);
         sentTransaction.setDestinationAccountNumber(toAccountNumber.getValue());
         transactionRepository.save(sentTransaction);
 
-        Transaction receivedTransaction = new Transaction(o,
+        Transaction receivedTransaction = new Transaction(toAccount,
                 Transaction.TransactionType.TRANSFER_RECEIVED,
                 amount.getValue(),
                 "Transfer from " + fromAccountNumber);
         receivedTransaction.setDestinationAccountNumber(fromAccountNumber.getValue());
         transactionRepository.save(receivedTransaction);
 
-        accountRepository.save(m);
-        accountRepository.save(o);
+        accountRepository.save(fromAccount);
+        accountRepository.save(toAccount);
 
         // Notification to the issuer
-        sendNotification(m.getUser(), Notification.NotificationType.TRANSFER,
+        sendNotification(fromAccount.getUser(), Notification.NotificationType.TRANSFER,
                 "Transfer Sent", "Transfer of %.2f EUR to %s. New balance: %.2f EUR",
                 "Transfer Sent", "Transfer of %.2f EUR to %s. New balance: %.2f EUR",
-                amount.getValue(), toAccountNumber, m.getBalance());
+                amount.getValue(), toAccountNumber, fromAccount.getBalance());
 
         // Notification to the recipient
-        sendNotification(o.getUser(), Notification.NotificationType.TRANSFER,
+        sendNotification(toAccount.getUser(), Notification.NotificationType.TRANSFER,
                 "Transfer Received", "Transfer of %.2f EUR from %s. New balance: %.2f EUR",
                 "Transfer Received", "Transfer of %.2f EUR from %s. New balance: %.2f EUR",
-                amount.getValue(), fromAccountNumber, o.getBalance());
+                amount.getValue(), fromAccountNumber, toAccount.getBalance());
     }
 
     /**
