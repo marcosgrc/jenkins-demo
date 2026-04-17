@@ -108,6 +108,9 @@ A continuación, se detallan los problemas detectados en la clase `AccountServic
    * Problema: El uso de nombres crípticos reduce la legibilidad del código y dificulta su comprensión, especialmente para otros desarrolladores o incluso para el propio autor cuando vuelva a revisar el código en el futuro. Esto obliga a analizar el contexto del método para entender qué representan las variables, lo que aumenta el tiempo necesario para mantener o modificar el código.
 
    * Cómo solucionarlo: Este problema se puede solucionar utilizando nombres de variables más descriptivos que reflejen claramente su función dentro del método. Por ejemplo, sustituir m por sourceAccount o fromAccount, y o por destinationAccount o toAccount. De esta forma, la intención del código se entiende de manera inmediata y se mejora la claridad y mantenibilidad del sistema.
+   * **Refactorización realizada:** Se han renombrado las variables locales del método `transfer` que tenían nombres poco descriptivos, `m` y `o`. Estas variables se han sustituido por nombres más claros, `fromAccount` y `toAccount`, respectivamente, reflejando significado dentro de la lógica del método `transfer`.
+ 
+<img width="1316" height="146" alt="image" src="https://github.com/user-attachments/assets/6ae30abd-a62b-45a5-b3e7-7a43615d953e" />
  
 ### Bad Smell 3: Large Class (Clase Grande)
 * **Ubicación:** `AccountService.java` - Toda la clase `AccountService` Líneas `1-326`
