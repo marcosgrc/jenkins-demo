@@ -42,6 +42,7 @@ A continuación, se detallan los problemas detectados en la clase `AccountServic
   * Problema: En caso de querer cambiar el String, el proceso de refactor podría generar inconsistencias si no se modifica el String en todos los lugares.
 
   * Como solucionarlo: El problema se solucionaría creando una constante `DEPOSIT_CONFIRMATION` cuyo valor sea el String, y usándola en todos los lugares donde se necesita ese String. De esta manera al cambiar el valor de la constante se refleja en todos los demás lugares y se mantiene consistente.
+* **Refactorización realizada:** Para solucionar este bad smell se ha creado una constante `DEPOSIT_CONFIRMATION` cuyo valor es el String "Deposit Confirmation", y se ha utilizado en todos los lugares donde se necesita ese String.
 
 ### Bad Smell 2: Variable local no utilizada (`seccondAccount`)
 * **Ubicación:** `AccountService.java` - Línea `185`
@@ -94,7 +95,7 @@ A continuación, se detallan los problemas detectados en la clase `AccountServic
    * Problema: Si las reglas de negocio para los depósitos cambian (por ejemplo, el límite máximo), hay que modificarlo en varios lugares, lo que aumenta el riesgo de inconsistencias y errores.
 
    * Como solucionarlo: El problema se podría solucionar unificando ambos métodos en uno solo, ya que el único cambio en el código es que como descripción del depósito se usa "Quick deposit" de forma predeterminada en el método que no recibe descripción.
-
+* **Refactorización realizada:** Se ha eliminado el cuerpo del método deposit(String, double) que era código duplicado, y se ha reemplazado por una llamada al método deposit(String, double, String) pasando como parámetro el String "Quick deposit". Los tests unitarios estaban duplicados (a propósito para reflejar que había una duplicación de código) para probar la lógica en ambos métodos, ahora la lógica solo se prueba en el método deposit(String, double, String) y para deposit(String, double) solo se comprueba que realiza la operación usando el texto por defecto "Quick deposit".
 
 
 ### Bad Smell 2: Mysterious Names / Non-Descriptive Names (Nombres poco claros)
@@ -143,6 +144,8 @@ A continuación, se detallan los problemas detectados en la clase `AccountServic
   * Problema: Un método que hace demasiado obliga al lector a mantener demasiado contexto en memoria y dificulta las pruebas unitarias aisladas de cada paso.
 
   * Como solucionarlo: El problema se podría solucionar fragmentando la lógica de este método en métodos más pequeños que se encarguen de realizar una única tarea cada uno, en vez de tener todo el código concentrado en un único método.
+
+* **Refactorización realizada:** Se ha extraído la lógica del método `transfer` a varios métodos más pequeños, cada uno encargado de una tarea específica. De esta forma, el método `transfer` se ha simplificado y ahora se encarga únicamente de coordinar las operaciones, mientras que los métodos privados `performFinancialTransfer`, `recordTransferTransactions` y `sendTransferNotifications` se encargan de realizar las tareas específicas.
 
 ### Bad Smell 5: Data Clumps (Racimos de Datos)
 * **Ubicación:** `AccountService.java` - Métodos `deposit`, `withdraw` y `transfer`.

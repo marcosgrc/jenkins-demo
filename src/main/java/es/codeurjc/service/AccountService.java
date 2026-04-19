@@ -29,6 +29,7 @@ public class AccountService {
     private final RandomService randomService;
     private static final double MAX_DEPOSIT_LIMIT = 10000;
     private static final double MAX_WITHDRAW_LIMIT = 5000;
+    public static final String DEPOSIT_CONFIRMATION = "Deposit Confirmation";
 
     public AccountService(AccountRepository accountRepository,
             TransactionRepository transactionRepository,
@@ -95,8 +96,8 @@ public class AccountService {
 
         // Send notification
         sendNotification(account.getUser(), Notification.NotificationType.DEPOSIT,
-                "Deposit Confirmation", "Deposit of %.2f EUR. New balance: %.2f EUR",
-                "Deposit Confirmation", "Deposit: %.2f EUR. Balance: %.2f EUR",
+                DEPOSIT_CONFIRMATION, "Deposit of %.2f EUR. New balance: %.2f EUR",
+                DEPOSIT_CONFIRMATION, "Deposit: %.2f EUR. Balance: %.2f EUR",
                 amount.getValue(), account.getBalance());
 
         return savedAccount;
@@ -107,28 +108,7 @@ public class AccountService {
      */
     @Transactional
     public Account deposit(AccountNumber accountNumber, Amount amount) {
-
-        if (amount.getValue() > MAX_DEPOSIT_LIMIT) {
-            throw new IllegalArgumentException("Amount exceeds maximum deposit limit");
-        }
-
-        Account account = getAccount(accountNumber);
-        account.deposit(amount.getValue());
-
-        // Record transaction
-        Transaction transaction = new Transaction(account, Transaction.TransactionType.DEPOSIT,
-                amount.getValue(), "Quick deposit");
-        transactionRepository.save(transaction);
-
-        Account savedAccount = accountRepository.save(account);
-
-        // Send notification
-        sendNotification(account.getUser(), Notification.NotificationType.DEPOSIT,
-                "Deposit Confirmation", "Deposit of %.2f EUR. New balance: %.2f EUR",
-                "Deposit Confirmation", "Deposit: %.2f EUR. Balance: %.2f EUR",
-                amount.getValue(), account.getBalance());
-
-        return savedAccount;
+        return deposit(accountNumber, amount, "Quick deposit");
     }
 
     /**
@@ -164,48 +144,53 @@ public class AccountService {
      */
     @Transactional
     public void transfer(AccountNumber fromAccountNumber, AccountNumber toAccountNumber, Amount amount) {
-
         Account fromAccount = getAccount(fromAccountNumber);
         Account toAccount = getAccount(toAccountNumber);
 
-        // Validate same account
         if (fromAccount.getAccountNumber().equals(toAccount.getAccountNumber())) {
             throw new IllegalArgumentException("Cannot transfer to same account");
         }
 
-        // Perform transfer
+        performFinancialTransfer(fromAccount, toAccount, amount);
+        recordTransferTransactions(fromAccount, toAccount, amount);
+        sendTransferNotifications(fromAccount, toAccount, amount);
+    }
+
+    private void performFinancialTransfer(Account fromAccount, Account toAccount, Amount amount) {
         fromAccount.withdraw(amount.getValue());
         toAccount.deposit(amount.getValue());
+        accountRepository.save(fromAccount);
+        accountRepository.save(toAccount);
+    }
 
-        // Record transactions
+    private void recordTransferTransactions(Account fromAccount, Account toAccount, Amount amount) {
         Transaction sentTransaction = new Transaction(fromAccount,
                 Transaction.TransactionType.TRANSFER_SENT,
                 amount.getValue(),
-                "Transfer to " + toAccountNumber);
-        sentTransaction.setDestinationAccountNumber(toAccountNumber.getValue());
+                "Transfer to " + toAccount.getAccountNumber());
+        sentTransaction.setDestinationAccountNumber(toAccount.getAccountNumber());
         transactionRepository.save(sentTransaction);
 
         Transaction receivedTransaction = new Transaction(toAccount,
                 Transaction.TransactionType.TRANSFER_RECEIVED,
                 amount.getValue(),
-                "Transfer from " + fromAccountNumber);
-        receivedTransaction.setDestinationAccountNumber(fromAccountNumber.getValue());
+                "Transfer from " + fromAccount.getAccountNumber());
+        receivedTransaction.setDestinationAccountNumber(fromAccount.getAccountNumber());
         transactionRepository.save(receivedTransaction);
+    }
 
-        accountRepository.save(fromAccount);
-        accountRepository.save(toAccount);
-
+    private void sendTransferNotifications(Account fromAccount, Account toAccount, Amount amount) {
         // Notification to the issuer
         sendNotification(fromAccount.getUser(), Notification.NotificationType.TRANSFER,
                 "Transfer Sent", "Transfer of %.2f EUR to %s. New balance: %.2f EUR",
                 "Transfer Sent", "Transfer of %.2f EUR to %s. New balance: %.2f EUR",
-                amount.getValue(), toAccountNumber, fromAccount.getBalance());
+                amount.getValue(), toAccount.getAccountNumber(), fromAccount.getBalance());
 
         // Notification to the recipient
         sendNotification(toAccount.getUser(), Notification.NotificationType.TRANSFER,
                 "Transfer Received", "Transfer of %.2f EUR from %s. New balance: %.2f EUR",
                 "Transfer Received", "Transfer of %.2f EUR from %s. New balance: %.2f EUR",
-                amount.getValue(), fromAccountNumber, toAccount.getBalance());
+                amount.getValue(), fromAccount.getAccountNumber(), toAccount.getBalance());
     }
 
     /**
