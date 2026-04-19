@@ -50,6 +50,9 @@ public class TransferE2ETest {
 
     @BeforeEach
     public void setupTest() {
+        accountRepository.deleteAll();
+        userRepository.deleteAll();
+
         driver = new ChromeDriver();
 
         // Create test user
