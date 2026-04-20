@@ -130,6 +130,18 @@ En esta práctica he implementado los tests unitarios necesarios para cubrir la 
 |4| [Refactorización de Bad Smell 12](https://github.com/Albermg27/cs-2026-grupo-2/commit/f41eedf5702d6d49e13ca2fe43dd72936d378e31) |
 |5| [Test E2E: "No se puede realizar una transferencia si la cantidad supera los 20.000€"](https://github.com/Albermg27/cs-2026-grupo-2/commit/a54a0040011033f7ccea08e026573c625d63c655)  |
 
+#### **Alumno 4 - Naroa Martin Simón**
+
+He implementado pruebas unitarias para los métodos de consulta de saldo y transacciones (getBalance y getTransactions), asegurando que la recuperación de datos sea precisa. 
+En cuanto a la refactorización, he corregido los "bad smells" de Primitive Obsession y Feature Envy mediante el uso de Value Objects, mejorando la encapsulación y la robustez del modelo de dominio. Además, he ajustado las aserciones de los tests para adaptarlas a los nuevos parámetros definidos. 
+Por último, he desarrollado una prueba de sistema (E2E) con Selenium que garantiza que el sistema bloquea correctamente cualquier intento de transferencia cuando la cuenta de origen y destino son la misma, protegiendo la integridad de la base de datos.
+
+| Nº | Commits      |
+|:--:|:------------:|
+| 1  | [Added unit tests for getBalance and getTransactions](https://github.com/Albermg27/cs-2026-grupo-2/commit/fa63e2914fed30db358fe565c2142088b0383cfb)  |
+| 2  | [Refactor: fix primitive obsession and feature envy bad smells by using Value Objects](https://github.com/Albermg27/cs-2026-grupo-2/commit/32993d95848b95ab91118f321d101334f33b00c4)  |
+| 3  | [Test assertion to new parameters fix](https://github.com/Albermg27/cs-2026-grupo-2/commit/5d988c657412bc1dcba7db9520a2e7e0b6ede6d3)  |
+| 4  | [Added E2E test for same account transfer restriction](https://github.com/Albermg27/cs-2026-grupo-2/commit/d3dc4c539b598e6c4e08e323c5ecb892c13f6e3f)  |
 
 #### **Alumno 5 - Alberto Mayoral Gómez**
 
@@ -153,20 +165,6 @@ He realizado las pruebas unitarias para asegurar que el proceso de sacar dinero 
 | 2  | [Refactorización: Switch Statement](https://github.com/Albermg27/cs-2026-grupo-2/commit/bbeaf665b9a5c019e3a790fc5a3d43784a9374dd)  |
 | 3  | [Refactorización: Inappropriate Intimacy](https://github.com/Albermg27/cs-2026-grupo-2/commit/0409e6d3e8f86ddae5d1a11f8d3ce2faefde9e16)  |
 | 4  | [Prueba de sistema: No se puede realizar una transferencia si no hay saldo suficiente](https://github.com/Albermg27/cs-2026-grupo-2/commit/2dcff62078ce661896a863fb71a18fdf1f6f0074)  |
-
-
-#### **Alumno 7 - Naroa Martin Simón**
-
-He implementado pruebas unitarias para los métodos de consulta de saldo y transacciones (getBalance y getTransactions), asegurando que la recuperación de datos sea precisa. 
-En cuanto a la refactorización, he corregido los "bad smells" de Primitive Obsession y Feature Envy mediante el uso de Value Objects, mejorando la encapsulación y la robustez del modelo de dominio. Además, he ajustado las aserciones de los tests para adaptarlas a los nuevos parámetros definidos. 
-Por último, he desarrollado una prueba de sistema (E2E) con Selenium que garantiza que el sistema bloquea correctamente cualquier intento de transferencia cuando la cuenta de origen y destino son la misma, protegiendo la integridad de la base de datos.
-
-| Nº | Commits      |
-|:--:|:------------:|
-| 1  | [Added unit tests for getBalance and getTransactions](https://github.com/Albermg27/cs-2026-grupo-2/commit/fa63e2914fed30db358fe565c2142088b0383cfb)  |
-| 2  | [Refactor: fix primitive obsession and feature envy bad smells by using Value Objects](https://github.com/Albermg27/cs-2026-grupo-2/commit/32993d95848b95ab91118f321d101334f33b00c4)  |
-| 3  | [Test assertion to new parameters fix](https://github.com/Albermg27/cs-2026-grupo-2/commit/5d988c657412bc1dcba7db9520a2e7e0b6ede6d3)  |
-| 4  | [Added E2E test for same account transfer restriction](https://github.com/Albermg27/cs-2026-grupo-2/commit/d3dc4c539b598e6c4e08e323c5ecb892c13f6e3f)  |
 
 
 ---
