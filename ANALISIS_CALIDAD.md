@@ -218,6 +218,18 @@ A continuación, se detallan los problemas detectados en la clase `AccountServic
     * **Problema:** Se pierden oportunidades para encapsular lógica de validación y formateo. Como se observa en las tres capturas, la validación para asegurar que un monto sea positivo se repite manualmente en `deposit` y `withdraw`, y el formato de la cuenta no está garantizado en `transfer`. Esto deja la lógica de validación dispersa por todo el servicio, aumentando el riesgo de inconsistencias.
     * **Cómo solucionarlo:** Crear *Value Objects* como una clase o record `Money` y `AccountNumber`. De esta forma, la validación ocurre una sola vez en el constructor del objeto y el servicio recibe datos cuya integridad ya está garantizada por el tipo.
 
+* **Refactorización realizada:**
+
+    La solución ha consistido en transformar los tipos primitivos en Value Objects mediante las clases Amount y AccountNumber. Un Objeto Valor es una entidad que se define exclusivamente por su contenido y no por una identidad única, garantizando la inmutabilidad y la autovalidación. Al centralizar las reglas de negocio —como el límite de 20.000€, la obligatoriedad de montos positivos y el formato regex de la cuenta— directamente en los constructores de estas clases, eliminamos la lógica repetitiva en AccountService. Esto permite que el servicio confíe ciegamente en la integridad de los datos que recibe, delegando la responsabilidad de la validez al propio tipo de dato y asegurando una precisión financiera que el tipo double no podía ofrecer.
+
+    Asimismo, se han desarrollado tests unitarios específicos (AmountTest, AccountNumberTest) y se han adaptado los parámetros en AccountServiceTest. Esta actualización de la suite de pruebas verifica que el sistema gestiona correctamente las excepciones ante datos inválidos, fortaleciendo la red de seguridad del código tras la refactorización.
+
+    ![Primitive Obsession - Objeto Valor AccountNumber](/img/Primitive_Obssesion_Refactor_AccountNumber.PNG)
+    ![Primitive Obsession - Objeto Valor Amount](img/Primitive_Obssesion_Refactor_Amount.PNG)
+    ![Primitive Obsession - Validación en Deposit](img/Primitive_Obsession_Refactor-1.PNG)
+    ![Primitive Obsession - Validación en Withdraw](img/Primitive_Obsession_Refactor-2.PNG)
+    ![Primitive Obsession - Firma del método Transfer](img/Primitive_Obsession_Refactor-3.PNG)
+
 ### Bad Smell 9: Feature Envy (Envidia de Funciones)
 * **Ubicación:** `AccountService.java` - Métodos `withdraw` y `transfer`.
 * **Reporte de la issue:**
@@ -230,7 +242,16 @@ A continuación, se detallan los problemas detectados en la clase `AccountServic
     * **Problema:** El servicio está asumiendo una responsabilidad que debería ser de la entidad `Account`. La lógica de determinar si una cuenta es capaz de afrontar un cargo según su estado interno es lógica de negocio pura. Al realizarla en el servicio, este demuestra "envidia" por el comportamiento que debería estar encapsulado en la clase de dominio, obligando al servicio a conocer innecesariamente las reglas de gestión de saldo.
     * **Cómo solucionarlo:** Aplicar el principio **"Tell, Don't Ask"** (Dile, no preguntes). Se debe mover la lógica de validación a la clase `Account`. El servicio simplemente debe invocar el método de retirada en la entidad, y que sea la propia cuenta la que valide su capacidad de pago y lance la excepción si no puede cumplir la operación.
  
+* **Refactorización realizada:**
 
+    La solución a este bad smell se ha logrado eliminando la necesidad del servicio de "preguntar" por el estado de otros objetos. Al introducir la clase Amount, el servicio ya no necesita inspeccionar si un valor es válido o realizar comparaciones manuales.
+
+    El cambio clave ha sido la eliminación de las llamadas a account.getBalance() dentro de la lógica de withdraw y transfer. Anteriormente, el servicio consultaba el saldo para decidir si lanzaba una excepción; ahora, simplemente invoca account.withdraw(amount.getValue()). Como la entidad Account ya posee la lógica interna para validar su propio saldo, el servicio deja de "envidiar" esa función y se limita a ordenar la acción.
+
+    Esto ha resultado en un código mucho más limpio, donde el servicio confía en el contrato de los objetos que maneja y se respeta el encapsulamiento de la entidad Account.
+
+    ![Feature Envy - Lógica de saldo en Withdraw](img/Feature_Envy_Refactor_1.PNG)
+    ![Feature Envy - Lógica de saldo en Transfer](img/Feature_Envy_Refactor_2.PNG)
 
 ### Bad Smell 10: Inappropriate Intimacy (Intimidad Inapropiada)
 * **Ubicación:** `AccountService.java` - Método `transfer` - Línea 235

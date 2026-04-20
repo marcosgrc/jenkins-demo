@@ -8,9 +8,7 @@ import java.util.Objects;
  * para representar conceptos con reglas de negocio específicas.
  */
 public class AccountNumber {
-
     private final String value;
-
     /**
      * Constructor que valida el formato del número de cuenta.
      * @param value El String con el número de cuenta (ej. ES1234567890).
@@ -20,12 +18,10 @@ public class AccountNumber {
         if (value == null || value.trim().isEmpty()) {
             throw new IllegalArgumentException("Account number cannot be null or empty");
         }
-
         // Validación de formato: Debe empezar por ES seguido de 10 dígitos (según RandomService)
         if (!value.matches("^ES\\d{10}$")) {
             throw new IllegalArgumentException("Invalid account number format. Must be ES followed by 10 digits.");
         }
-
         this.value = value;
     }
 
