@@ -393,7 +393,7 @@ public class AccountServiceTest {
     // --- Tests for rm(String accountNumber) ---
 
     @Test
-    void rm_accountWithNonZeroBalance_throwsException() {
+    void deleteAccount_accountWithNonZeroBalance_throwsException() {
         // GIVEN
         account.setBalance(100.0);
 
@@ -401,7 +401,7 @@ public class AccountServiceTest {
 
         // WHEN & THEN
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            accountService.rm(accountNumber);
+            accountService.deleteAccount(accountNumber);
         });
 
         assertEquals("Cannot delete account with non-zero balance", exception.getMessage());
@@ -410,27 +410,27 @@ public class AccountServiceTest {
     }
 
     @Test
-    void rm_accountWithZeroBalance_deletesAccount() {
+    void deleteAccount_accountWithZeroBalance_deletesAccount() {
         // GIVEN
         account.setBalance(0.0);
 
         when(accountRepository.findByAccountNumber(accountNumber.getValue())).thenReturn(Optional.of(account));
 
         // WHEN
-        accountService.rm(accountNumber);
+        accountService.deleteAccount(accountNumber);
 
         // THEN
         verify(accountRepository).delete(account);
     }
 
     @Test
-    void rm_accountNotFound_throwsException() {
+    void deleteAccount_accountNotFound_throwsException() {
         // GIVEN
         when(accountRepository.findByAccountNumber(accountNumber.getValue())).thenReturn(Optional.empty());
 
         // WHEN & THEN
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            accountService.rm(accountNumber);
+            accountService.deleteAccount(accountNumber);
         });
 
         assertEquals("Account not found", exception.getMessage());

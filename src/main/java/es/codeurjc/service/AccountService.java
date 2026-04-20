@@ -80,9 +80,7 @@ public class AccountService {
      */
     @Transactional
     public Account deposit(AccountNumber accountNumber, Amount amount, String description) {
-        if (amount.getValue() > MAX_DEPOSIT_LIMIT) {
-            throw new IllegalArgumentException("Amount exceeds maximum deposit limit");
-        }
+        validateAmount(amount, MAX_DEPOSIT_LIMIT, "deposit");
 
         Account account = getAccount(new AccountNumber(accountNumber.getValue()));
         account.deposit(amount.getValue());
@@ -116,9 +114,7 @@ public class AccountService {
      */
     @Transactional
     public Account withdraw(AccountNumber accountNumber, Amount amount, String description) {
-        if (amount.getValue() > MAX_WITHDRAW_LIMIT) {
-            throw new IllegalArgumentException("Amount exceeds maximum withdrawal limit");
-        }
+        validateAmount(amount, MAX_WITHDRAW_LIMIT, "withdrawal");
         Account account = getAccount(accountNumber);
 
         account.withdraw(amount.getValue());
@@ -196,7 +192,7 @@ public class AccountService {
     /**
      * Delete account
      */
-    public void rm(AccountNumber accountNumber) {
+    public void deleteAccount(AccountNumber accountNumber) {
         Account account = getAccount(accountNumber);
 
         if (account.getBalance() != 0) {
@@ -232,6 +228,12 @@ public class AccountService {
             emailService.sendNotification(user, type, emailSubject, String.format(emailFormat, args));
         } else if (notifType == User.NotificationType.SMS) {
             smsService.sendNotification(user, type, smsSubject, String.format(smsFormat, args));
+        }
+    }
+
+    private void validateAmount(Amount amount, double max, String message){
+        if (amount.getValue() > max) {
+            throw new IllegalArgumentException("Amount exceeds maximum "+ message +" limit");
         }
     }
 
