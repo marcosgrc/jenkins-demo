@@ -126,7 +126,8 @@ public class AccountServiceTest {
 
     @Test
     void depositWithDescription_amountZero_throwsException() {
-        //Exception thrown from Amount class constructor when trying to create Amount with 0.0
+        // Exception thrown from Amount class constructor when trying to create Amount
+        // with 0.0
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             accountService.deposit(accountNumber, new Amount(0.0), "Test deposit");
         });
@@ -135,7 +136,8 @@ public class AccountServiceTest {
 
     @Test
     void depositWithDescription_amountNegative_throwsException() {
-        //Exception thrown from Amount class constructor when trying to create Amount with -50.0
+        // Exception thrown from Amount class constructor when trying to create Amount
+        // with -50.0
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             accountService.deposit(accountNumber, new Amount(-50.0), "Test deposit");
         });
@@ -184,7 +186,7 @@ public class AccountServiceTest {
         verify(emailService).sendNotification(
                 eq(user),
                 eq(Notification.NotificationType.DEPOSIT),
-                eq("Deposit Confirmation"),
+                eq(AccountService.DEPOSIT_CONFIRMATION),
                 eq("Deposit of 100,00 EUR. New balance: 1100,00 EUR"));
         verifyNoInteractions(smsService);
     }
@@ -204,7 +206,7 @@ public class AccountServiceTest {
         verify(smsService).sendNotification(
                 eq(user),
                 eq(Notification.NotificationType.DEPOSIT),
-                eq("Deposit Confirmation"),
+                eq(AccountService.DEPOSIT_CONFIRMATION),
                 eq("Deposit: 100,00 EUR. Balance: 1100,00 EUR"));
         verifyNoInteractions(emailService);
     }
@@ -228,105 +230,22 @@ public class AccountServiceTest {
     // --- Tests for deposit(String accountNumber, double amount) ---
 
     @Test
-    void depositNoDescription_amountZero_throwsException() {
-        // Exception thrown from Amount class constructor when trying to create Amount with 0.0
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            accountService.deposit(accountNumber, new Amount(0.0));
-        });
-        assertEquals("Amount must be greater than zero", exception.getMessage());
-    }
-
-    @Test
-    void depositNoDescription_amountNegative_throwsException() {
-        // Exception thrown from Amount class constructor when trying to create Amount with -50.0
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            accountService.deposit(accountNumber, new Amount(-50.0));
-        });
-        assertEquals("Amount must be positive", exception.getMessage());
-    }
-
-    @Test
-    void depositNoDescription_amountGreaterThan10000_throwsException() {
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            accountService.deposit(accountNumber, new Amount(15000.0));
-        });
-        assertEquals("Amount exceeds maximum deposit limit", exception.getMessage());
-    }
-
-    @Test
-    void depositNoDescription_amountGreaterThan50000_throwsException() {
-        // This branch in the service is unreachable because > 10000 throws first
-        // Exception thrown from Amount class constructor
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            accountService.deposit(accountNumber, new Amount(60000.0));
-        });
-        assertEquals("Amount exceeds maximum limit of 20,000", exception.getMessage());
-    }
-
-    @Test
-    void depositNoDescription_accountNotFound_throwsException() {
-        when(accountRepository.findByAccountNumber(accountNumber.getValue())).thenReturn(Optional.empty());
-
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            accountService.deposit(accountNumber, amount100);
-        });
-        assertEquals("Account not found", exception.getMessage());
-    }
-
-    @Test
-    void depositNoDescription_validAmountAndEmailNotification_success() {
-        user.setNotificationType(User.NotificationType.EMAIL);
-        when(accountRepository.findByAccountNumber(accountNumber.getValue())).thenReturn(Optional.of(account));
-        when(accountRepository.save(any(Account.class))).thenReturn(account);
-
-        Account savedAccount = accountService.deposit(accountNumber, amount100);
-
-        assertEquals(1100.0, savedAccount.getBalance());
-
-        verify(transactionRepository).save(any(Transaction.class));
-        verify(accountRepository).save(account);
-        verify(emailService).sendNotification(
-                eq(user),
-                eq(Notification.NotificationType.DEPOSIT),
-                eq("Deposit Confirmation"),
-                eq("Deposit of 100,00 EUR. New balance: 1100,00 EUR"));
-        verifyNoInteractions(smsService);
-    }
-
-    @Test
-    void depositNoDescription_validAmountAndSmsNotification_success() {
-        user.setNotificationType(User.NotificationType.SMS);
-        when(accountRepository.findByAccountNumber(accountNumber.getValue())).thenReturn(Optional.of(account));
-        when(accountRepository.save(any(Account.class))).thenReturn(account);
-
-        Account savedAccount = accountService.deposit(accountNumber, amount100);
-
-        assertEquals(1100.0, savedAccount.getBalance());
-
-        verify(transactionRepository).save(any(Transaction.class));
-        verify(accountRepository).save(account);
-        verify(smsService).sendNotification(
-                eq(user),
-                eq(Notification.NotificationType.DEPOSIT),
-                eq("Deposit Confirmation"),
-                eq("Deposit: 100,00 EUR. Balance: 1100,00 EUR"));
-        verifyNoInteractions(emailService);
-    }
-
-    @Test
-    void depositNoDescription_validAmountAndNoNotification_success() {
+    void depositNoDescription_delegatesToDepositWithDescription_success() {
+        // GIVEN
         user.setNotificationType(null);
         when(accountRepository.findByAccountNumber(accountNumber.getValue())).thenReturn(Optional.of(account));
         when(accountRepository.save(any(Account.class))).thenReturn(account);
 
+        // WHEN
         Account savedAccount = accountService.deposit(accountNumber, amount100);
 
+        // THEN
         assertEquals(1100.0, savedAccount.getBalance());
 
-        verify(transactionRepository).save(any(Transaction.class));
-        verify(accountRepository).save(account);
-        verifyNoInteractions(emailService);
-        verifyNoInteractions(smsService);
+        // Verify that the transaction was saved with the default description
+        verify(transactionRepository)
+                .save(argThat(transaction -> "Quick deposit".equals(transaction.getDescription()) &&
+                        transaction.getAmount() == 100.0));
     }
 
     // --- Tests for getAccount(String accountNumber) and getUserAccounts(User user)
@@ -338,7 +257,8 @@ public class AccountServiceTest {
         when(accountRepository.findByAccountNumber("ES000")).thenReturn(Optional.empty());
 
         // WHEN & THEN
-        // Exception thrown from AccountNumber constructor when trying to create AccountNumber with "ES000"
+        // Exception thrown from AccountNumber constructor when trying to create
+        // AccountNumber with "ES000"
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             accountService.getAccount(new AccountNumber("ES000"));
         });
@@ -352,7 +272,10 @@ public class AccountServiceTest {
         when(accountRepository.findByAccountNumber("ES0000000123")).thenReturn(Optional.of(account));
 
         // WHEN
-        // Exception thrown from AccountNumber constructor when trying to create AccountNumber with "ES123" because it doesn't have 10 digits, but we want to test getAccount, so we catch that exception and ignore it to proceed with the test
+        // Exception thrown from AccountNumber constructor when trying to create
+        // AccountNumber with "ES123" because it doesn't have 10 digits, but we want to
+        // test getAccount, so we catch that exception and ignore it to proceed with the
+        // test
         Account result = accountService.getAccount(new AccountNumber("ES0000000123"));
 
         // THEN
@@ -412,7 +335,8 @@ public class AccountServiceTest {
         when(accountRepository.findByAccountNumber("INVALID")).thenReturn(Optional.empty());
 
         // WHEN & THEN
-        // Exception thrown from AccountNumber constructor when trying to create AccountNumber with "INVALID"
+        // Exception thrown from AccountNumber constructor when trying to create
+        // AccountNumber with "INVALID"
         assertThrows(IllegalArgumentException.class, () -> {
             accountService.getBalance(new AccountNumber("INVALID"));
         });
@@ -458,7 +382,8 @@ public class AccountServiceTest {
         when(accountRepository.findByAccountNumber("NON_EXISTENT")).thenReturn(Optional.empty());
 
         // WHEN & THEN
-        // Exception thrown from AccountNumber constructor when trying to create AccountNumber with "NON_EXISTENT"
+        // Exception thrown from AccountNumber constructor when trying to create
+        // AccountNumber with "NON_EXISTENT"
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
             accountService.getTransactions(new AccountNumber("NON_EXISTENT"));
         });
@@ -468,7 +393,7 @@ public class AccountServiceTest {
     // --- Tests for rm(String accountNumber) ---
 
     @Test
-    void rm_accountWithNonZeroBalance_throwsException() {
+    void deleteAccount_accountWithNonZeroBalance_throwsException() {
         // GIVEN
         account.setBalance(100.0);
 
@@ -476,7 +401,7 @@ public class AccountServiceTest {
 
         // WHEN & THEN
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            accountService.rm(accountNumber);
+            accountService.deleteAccount(accountNumber);
         });
 
         assertEquals("Cannot delete account with non-zero balance", exception.getMessage());
@@ -485,27 +410,27 @@ public class AccountServiceTest {
     }
 
     @Test
-    void rm_accountWithZeroBalance_deletesAccount() {
+    void deleteAccount_accountWithZeroBalance_deletesAccount() {
         // GIVEN
         account.setBalance(0.0);
 
         when(accountRepository.findByAccountNumber(accountNumber.getValue())).thenReturn(Optional.of(account));
 
         // WHEN
-        accountService.rm(accountNumber);
+        accountService.deleteAccount(accountNumber);
 
         // THEN
         verify(accountRepository).delete(account);
     }
 
     @Test
-    void rm_accountNotFound_throwsException() {
+    void deleteAccount_accountNotFound_throwsException() {
         // GIVEN
         when(accountRepository.findByAccountNumber(accountNumber.getValue())).thenReturn(Optional.empty());
 
         // WHEN & THEN
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            accountService.rm(accountNumber);
+            accountService.deleteAccount(accountNumber);
         });
 
         assertEquals("Account not found", exception.getMessage());
@@ -626,7 +551,8 @@ public class AccountServiceTest {
     // --- Tests for transfer(String fromAccountNumber, String toAccountNumber,
     // double amount) ---
 
-    // We performed 3 tests that correspond to throwing an exception when amount is zero, 
+    // We performed 3 tests that correspond to throwing an exception when amount is
+    // zero,
     // negative, or greater than 20000
     @ParameterizedTest(name = "Cantidad {0} debe lanzar error: {1}")
     @CsvSource({
@@ -637,7 +563,8 @@ public class AccountServiceTest {
     void transfer_invalidAmounts_throwsException(double value, String expectedMessage) {
         // WHEN & THEN
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class, () -> {
-            Amount amount = new Amount(value); // This will throw for 0.0 and -1.0, but we want to test transfer, so we catch that exception and ignore it to proceed with the test
+            Amount amount = new Amount(value); // This will throw for 0.0 and -1.0, but we want to test transfer, so we
+                                               // catch that exception and ignore it to proceed with the test
             accountService.transfer(accountNumber, accountNumber2, amount);
         });
 
@@ -669,7 +596,7 @@ public class AccountServiceTest {
         assertEquals("Insufficient funds", exception.getMessage());
     }
 
-    // We performed two tests that correspond to throwing an exception when the 
+    // We performed two tests that correspond to throwing an exception when the
     // source or destination account is not found
     @ParameterizedTest(name = "Lanza error cuando origen existe={0} y destino existe={1}")
     @CsvSource({
@@ -694,7 +621,7 @@ public class AccountServiceTest {
         assertEquals("Account not found", exception.getMessage());
     }
 
-    // We perform 3 tests that verify the success of a transfer and the different 
+    // We perform 3 tests that verify the success of a transfer and the different
     // ways of being notified, whether by email, SMS or without notification
     @ParameterizedTest(name = "Transferencia exitosa con notificación: {0}")
     @ValueSource(strings = { "EMAIL", "SMS", "NONE" })

@@ -42,6 +42,7 @@ A continuación, se detallan los problemas detectados en la clase `AccountServic
   * Problema: En caso de querer cambiar el String, el proceso de refactor podría generar inconsistencias si no se modifica el String en todos los lugares.
 
   * Como solucionarlo: El problema se solucionaría creando una constante `DEPOSIT_CONFIRMATION` cuyo valor sea el String, y usándola en todos los lugares donde se necesita ese String. De esta manera al cambiar el valor de la constante se refleja en todos los demás lugares y se mantiene consistente.
+* **Refactorización realizada:** Para solucionar este bad smell se ha creado una constante `DEPOSIT_CONFIRMATION` cuyo valor es el String "Deposit Confirmation", y se ha utilizado en todos los lugares donde se necesita ese String.
 
 ### Bad Smell 2: Variable local no utilizada (`seccondAccount`)
 * **Ubicación:** `AccountService.java` - Línea `185`
@@ -94,7 +95,7 @@ A continuación, se detallan los problemas detectados en la clase `AccountServic
    * Problema: Si las reglas de negocio para los depósitos cambian (por ejemplo, el límite máximo), hay que modificarlo en varios lugares, lo que aumenta el riesgo de inconsistencias y errores.
 
    * Como solucionarlo: El problema se podría solucionar unificando ambos métodos en uno solo, ya que el único cambio en el código es que como descripción del depósito se usa "Quick deposit" de forma predeterminada en el método que no recibe descripción.
-
+* **Refactorización realizada:** Se ha eliminado el cuerpo del método deposit(String, double) que era código duplicado, y se ha reemplazado por una llamada al método deposit(String, double, String) pasando como parámetro el String "Quick deposit". Los tests unitarios estaban duplicados (a propósito para reflejar que había una duplicación de código) para probar la lógica en ambos métodos, ahora la lógica solo se prueba en el método deposit(String, double, String) y para deposit(String, double) solo se comprueba que realiza la operación usando el texto por defecto "Quick deposit".
 
 
 ### Bad Smell 2: Mysterious Names / Non-Descriptive Names (Nombres poco claros)
@@ -108,6 +109,9 @@ A continuación, se detallan los problemas detectados en la clase `AccountServic
    * Problema: El uso de nombres crípticos reduce la legibilidad del código y dificulta su comprensión, especialmente para otros desarrolladores o incluso para el propio autor cuando vuelva a revisar el código en el futuro. Esto obliga a analizar el contexto del método para entender qué representan las variables, lo que aumenta el tiempo necesario para mantener o modificar el código.
 
    * Cómo solucionarlo: Este problema se puede solucionar utilizando nombres de variables más descriptivos que reflejen claramente su función dentro del método. Por ejemplo, sustituir m por sourceAccount o fromAccount, y o por destinationAccount o toAccount. De esta forma, la intención del código se entiende de manera inmediata y se mejora la claridad y mantenibilidad del sistema.
+   * **Refactorización realizada:** Se han renombrado las variables locales del método `transfer` que tenían nombres poco descriptivos, `m` y `o`. Estas variables se han sustituido por nombres más claros, `fromAccount` y `toAccount`, respectivamente, reflejando significado dentro de la lógica del método `transfer`.
+ 
+<img width="1316" height="146" alt="image" src="https://github.com/user-attachments/assets/6ae30abd-a62b-45a5-b3e7-7a43615d953e" />
  
 ### Bad Smell 3: Large Class (Clase Grande)
 * **Ubicación:** `AccountService.java` - Toda la clase `AccountService` Líneas `1-326`
@@ -140,6 +144,8 @@ A continuación, se detallan los problemas detectados en la clase `AccountServic
   * Problema: Un método que hace demasiado obliga al lector a mantener demasiado contexto en memoria y dificulta las pruebas unitarias aisladas de cada paso.
 
   * Como solucionarlo: El problema se podría solucionar fragmentando la lógica de este método en métodos más pequeños que se encarguen de realizar una única tarea cada uno, en vez de tener todo el código concentrado en un único método.
+
+* **Refactorización realizada:** Se ha extraído la lógica del método `transfer` a varios métodos más pequeños, cada uno encargado de una tarea específica. De esta forma, el método `transfer` se ha simplificado y ahora se encarga únicamente de coordinar las operaciones, mientras que los métodos privados `performFinancialTransfer`, `recordTransferTransactions` y `sendTransferNotifications` se encargan de realizar las tareas específicas.
 
 ### Bad Smell 5: Data Clumps (Racimos de Datos)
 * **Ubicación:** `AccountService.java` - Métodos `deposit`, `withdraw` y `transfer`.
@@ -183,10 +189,10 @@ A continuación, se detallan los problemas detectados en la clase `AccountServic
 
 * **Reporte de la issue:**
 
-  <img width="600" height="807" alt="image" src="https://github.com/user-attachments/assets/4b360d4f-529d-4901-ab9f-5d958ecf35c2" />
-  <img width="600" height="836" alt="image" src="https://github.com/user-attachments/assets/79de44b7-513e-41ee-b823-0f6af2430458" />
-  <img width="600" height="715" alt="image" src="https://github.com/user-attachments/assets/4b55ab82-f548-46d5-9a30-f9011db17b59" />
-  <img width="600" height="678" alt="image" src="https://github.com/user-attachments/assets/bd310429-d3eb-4758-b3b2-1d94e43d9dd6" />
+  <img width="600" alt="image" src="https://github.com/user-attachments/assets/4b360d4f-529d-4901-ab9f-5d958ecf35c2" >
+  <img width="600" alt="image" src="https://github.com/user-attachments/assets/79de44b7-513e-41ee-b823-0f6af2430458" >
+  <img width="600" alt="image" src="https://github.com/user-attachments/assets/4b55ab82-f548-46d5-9a30-f9011db17b59" >
+  <img width="600" alt="image" src="https://github.com/user-attachments/assets/bd310429-d3eb-4758-b3b2-1d94e43d9dd6" >
 
 * **Explicación del mal olor:**
 
@@ -198,10 +204,10 @@ A continuación, se detallan los problemas detectados en la clase `AccountServic
 
   Para solucionar este bad smell se ha extraído la lógica de notificación a un único método privado llamado `sendNotification`. Mediante el uso de argumentos variables y plantillas de formato, se ha logrado que los métodos se desentiendan de la logística de envío. Esto no solo elimina la duplicación de código, sino que también corrige la violación del polimorfismo al centralizar la toma de decisiones, permitiendo que cada operación defina sus propios textos y asuntos de forma independiente para cada canal (EMAIL o SMS) sin ensuciar el flujo principal del servicio.
 
-   <img width="600" height="180" alt="image" src="https://github.com/user-attachments/assets/72edd645-01e9-4641-9dc0-b1097ea5f679" />
-   <img width="600" height="119" alt="image" src="https://github.com/user-attachments/assets/81872752-e753-41c3-9155-7f195bc08663" />
-   <img width="600" height="120" alt="image" src="https://github.com/user-attachments/assets/14478ff6-46ed-4cba-81a6-287fb4184ffd" />
-   <img width="600" height="252" alt="image" src="https://github.com/user-attachments/assets/a13067e0-856e-455e-bc6e-1e342d973113" />
+   <img width="600" alt="image" src="https://github.com/user-attachments/assets/72edd645-01e9-4641-9dc0-b1097ea5f679" >
+   <img width="600" alt="image" src="https://github.com/user-attachments/assets/81872752-e753-41c3-9155-7f195bc08663" >
+   <img width="600" alt="image" src="https://github.com/user-attachments/assets/14478ff6-46ed-4cba-81a6-287fb4184ffd" >
+   <img width="600" alt="image" src="https://github.com/user-attachments/assets/a13067e0-856e-455e-bc6e-1e342d973113" >
 
 
 
@@ -258,7 +264,7 @@ A continuación, se detallan los problemas detectados en la clase `AccountServic
 
 * **Reporte de la issue:**
   
-  <img width="600" height="363" alt="image" src="https://github.com/user-attachments/assets/3a4b93ae-10cd-456d-ae1c-07a30e360d83" />
+  <img width="600" alt="image" src="https://github.com/user-attachments/assets/3a4b93ae-10cd-456d-ae1c-07a30e360d83" >
 
 * **Explicación del mal olor:**
 
@@ -270,8 +276,8 @@ A continuación, se detallan los problemas detectados en la clase `AccountServic
 
   Para solucionar este bad smell se ha eliminado la comparación directa de los atributos internos de las entidades desde el servicio. En lugar de que `AccountService` extraiga los números de cuenta para compararlos mediante m.getAccountNumber() == o.getAccountNumber(), he delegado esta responsabilidad a la entidad `Account` implementando correctamente el método `equals()`. De esta forma, el servicio ahora simplemente invoca m.equals(o), respetando el encapsulamiento y reduciendo el acoplamiento.
 
-  <img width="600" height="278" alt="image" src="https://github.com/user-attachments/assets/c37be170-a846-4755-910c-7343d19e2245" />
-  <img width="600" height="84" alt="image" src="https://github.com/user-attachments/assets/114c7765-3dc1-4a41-8272-9857ee4df159" />
+  <img width="600" alt="image" src="https://github.com/user-attachments/assets/c37be170-a846-4755-910c-7343d19e2245" >
+  <img width="600" alt="image" src="https://github.com/user-attachments/assets/114c7765-3dc1-4a41-8272-9857ee4df159" >
 
 
 

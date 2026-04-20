@@ -94,3 +94,31 @@ En esta práctica he añadido dos nuevos bad smells en la memoria de análisis: 
 |1| [Bad smells 15 y 16 añadidos en ANALISIS_CALIDAD.md](PENDIENTE_ENLACE_COMMIT)  |
 
 ---
+
+### **Participación de Miembros en la Práctica 3**
+
+#### **Alumno 1 - Marcos García García**
+
+Para esta práctica he realizado las siguientes tareas: crear la estructura inicial de AccountServiceTest, los tests del método deposit y los tests para el método createAccount. También he refactorizado los bad smells: literales duplicados, código duplicado (deposit) y método grande (transfer), y añadí la explicación de la refactorización en el fichero ANALISIS_CALIDAD. Finalmente, he creado el test E2E que prueba la transferencia entre cuentas propias, además de crear la estructura inicial de la clase TransferE2ETest.
+
+| Nº    | Commits      |
+|:------------: |:------------:|
+|1| [Estructura inicial de AccountServiceTest y tests del método deposit](https://github.com/Albermg27/cs-2026-grupo-2/commit/74b2d08d7345186a7dd7153e3d390a2740fb2df4)  |
+|2| [Tests para el método createAccount y tests restantes de deposit](https://github.com/Albermg27/cs-2026-grupo-2/commit/b428e721387b0c0f9240f250ff82b59e4cbefd3e)  |
+|3| [Refactorizar bad smells: literales duplicados, código duplicado (deposit) y método grande (transfer)](https://github.com/Albermg27/cs-2026-grupo-2/commit/d1a2f1e637796a3de2a0cecb03de51e421af9c94)  |
+|4| [Test E2E: Transferencia entre cuentas propias y estructura inicial TransferE2ETest](https://github.com/Albermg27/cs-2026-grupo-2/commit/9d28324185aa76ad39c33fb152a333c150da58c0)  |
+
+
+#### **Alumno 6 - Icíar Moreno López**
+
+He realizado las pruebas unitarias para asegurar que el proceso de sacar dinero funciona correctamente en todos los casos (método withdraw). He simplificado el sistema de notificaciones para que no haya código repetido y sea más fácil de mantener (Bad Smell Switch Statement). También he corregido la forma en la que las cuentas se comparan entre sí para mejorar la organización del código (Bad Smell Inappropriate Intimacy). Por último, he programado una prueba de sistema que verifica que el sistema bloquea las transferencias si el cliente no tiene dinero suficiente.
+
+| Nº | Commits      |
+|:--:|:------------:|
+| 1  | [Pruebas unitarias del método withdraw](https://github.com/Albermg27/cs-2026-grupo-2/commit/fef564df18b1e0dcc9bb176c555fd781a3cc5355)  |
+| 2  | [Refactorización: Switch Statement](https://github.com/Albermg27/cs-2026-grupo-2/commit/bbeaf665b9a5c019e3a790fc5a3d43784a9374dd)  |
+| 3  | [Refactorización: Inappropriate Intimacy](https://github.com/Albermg27/cs-2026-grupo-2/commit/0409e6d3e8f86ddae5d1a11f8d3ce2faefde9e16)  |
+| 4  | [Prueba de sistema: No se puede realizar una transferencia si no hay saldo suficiente](https://github.com/Albermg27/cs-2026-grupo-2/commit/2dcff62078ce661896a863fb71a18fdf1f6f0074)  |
+
+
+---
