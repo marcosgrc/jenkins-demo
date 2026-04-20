@@ -108,6 +108,16 @@ Para esta práctica he realizado las siguientes tareas: crear la estructura inic
 |3| [Refactorizar bad smells: literales duplicados, código duplicado (deposit) y método grande (transfer)](https://github.com/Albermg27/cs-2026-grupo-2/commit/d1a2f1e637796a3de2a0cecb03de51e421af9c94)  |
 |4| [Test E2E: Transferencia entre cuentas propias y estructura inicial TransferE2ETest](https://github.com/Albermg27/cs-2026-grupo-2/commit/9d28324185aa76ad39c33fb152a333c150da58c0)  |
 
+#### **Alumno 2 - Adrián Muñoz Serrano**
+
+Para esta práctica he realizado las siguientes tareas: implementación de los tests unitarios `getAccount` y `getUserAccounts` en `AccountServiceTest`. He refactorizado los bad smells en `AccountService`: eliminación de la variable no utilizada `seccondAccount`, corrección de la comparación de Strings con `.equals()`, y extracción de límites numéricos (Magic Numbers) a constantes. Además, he validado la refactorización de `sendNotification` (Data Clump) y he creado el test E2E de transferencia entre cuentas de distintos usuarios.
+
+| Nº    | Commits      |
+|:------------: |:------------:|
+|1| [Tests unitarios para los métodos getAccount y getUserAccounts](https://github.com/Albermg27/cs-2026-grupo-2/commit/210a055dbff54e41c5d71d875f0954e5686ff5b9) |
+|2| [Refactorización de bad smells: variable no usada, comparación de Strings y Magic Numbers](https://github.com/Albermg27/cs-2026-grupo-2/commit/0dcda605afd0440f266b9c31b754dd134168125c) |
+|3| [Test E2E: Transferencia entre cuentas de distintos usuarios](https://github.com/Albermg27/cs-2026-grupo-2/commit/87e3a628f953a2541a9154c4b692ba9fd3a73633) |
+
 #### **Alumno 5 - Alberto Mayoral Gómez**
 
 Para esta práctica he añadido nuevas pruebas unitarias y test E2E, además de participar en la refactorización de varios bad smells y en la documentación del análisis de calidad. En concreto, he desarrollado los tests unitarios del método rm(String accountNumber), he realizado la refactorización del bad smell Mysterious Names / Non-Descriptive Names, he actualizado la documentación del bad smell Large Class en el fichero ANALISIS_CALIDAD.md y he implementado una prueba E2E que verifica que no se puede realizar una transferencia si la cantidad es negativa.
