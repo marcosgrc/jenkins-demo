@@ -298,6 +298,14 @@ A continuación, se detallan los problemas detectados en la clase `AccountServic
     * **Problema:** Nunca se ejecuta la última condición, ya que si es mayor que 50000 también lo será de 10000, por lo que entrará en if (amount > 10000), lanzará la excepción y el método terminará ahí. La comprobación de 50000 es invisible para el programa.
     * **Cómo solucionarlo:** Eliminar la condición if (amount > 50000).
 
+* **Refactorización realizada:**
+
+    En la refactorización del Bad Smell 8 (Primitive obsession) quedó subsanado este bad smell, al no incluir la comprobación de si la cantidad es mayor que 50,000.
+
+    ![Dead Code - Máxima cantidad permitida a depositar](/img/bad_smell_11.1.png)
+    ![Dead Code - Parte del código de deposit refactorizada](/img/bad_smell_11.2.png)
+    ![Dead Code - Refactorización final](/img/bad_smell11.3.png)
+
 ### Bad Smell 12: Duplicate Code (Código duplicado)
 * **Ubicación:** `AccountService.java` - Método `deposit` - Líneas 78-83
 
@@ -310,6 +318,11 @@ A continuación, se detallan los problemas detectados en la clase `AccountServic
     * **Descripción:** Se comprueban dos condiciones cuyos bloques tienen el mismo código.
     * **Problema:** Al separarlos, obligas a quien mantenga el código a actualizar dos sitios si, por ejemplo, decides cambiar el mensaje de error o el tipo de excepción. Aumenta la probabilidad de introducir inconsistencias.
     * **Cómo solucionarlo:** Unir las condiciones en una sola con amount <= 0.
+
+* **Refactorización realizada:**
+    Tras la refactorización del Bad Smell 8 (Primitive obsession), el Duplicate Code (código duplicado) asociado a este bad smell se trasladó a la clase `Amount`. Ya aquí, se procedió a la unión de ambas condiciones en una sola que comprueba si la cantidad es menor o igual que 0, y lanza una excepción.
+
+    ![Duplicate Code - Refactorización](/img/bad_smell_12_refactor.png)
 
 ### Bad Smell 13: Duplicate Code (Código duplicado)
 * **Ubicación:** `AccountService.java` - Métodos `deposit`, `withdraw` y `transfer` - Líneas 78-89, 127-138, 176-182 y 224-229
@@ -326,6 +339,13 @@ A continuación, se detallan los problemas detectados en la clase `AccountServic
     * **Problema:** Al separarlos, obligas a quien mantenga el código a actualizar todos los métodos si decides cambiar las condiciones de validación de amount. Aumenta la probabilidad de introducir inconsistencias, además de esfuerzo de mantenimiento.
     * **Cómo solucionarlo:** Extraer un método que realice esta validación, por ejemplo validateAmount(double amount, double maxLimit), y sea llamado por estos métodos.
 
+* **Refactorización realizada:**
+    Tras la refactorización del Bad Smell 8 (Primitive obsession) y el Bad Smell 6 (Magic Numbers), este code smell sobrevivió únicamente en los métodos `deposit` y `withdraw`. Por tanto, se ha creado una función auxiliar (validateAmount()) que implementa la comprobación de que la cantidad indicada para depositar o extraer dinero no supere las cantidades máximas permitidas. De esta manera, `deposit` y `withdraw` solo tienen que llamar a esta función.
+
+    ![Duplicate Code - Refactorización en deposit](/img/bad_smell_13.1.png)
+    ![Duplicate Code - Refactorización en withdraw](/img/bad_smell_13.2.png)
+    ![Duplicate Code - Función auxiliar](/img/bad_smell_13.3.png)
+
 ### Bad Smell 14: Uncommunicative Name (Nombre poco comunicativo)
 * **Ubicación:** `AccountService.java` - Método `rm` - Línea 301
 
@@ -338,6 +358,11 @@ A continuación, se detallan los problemas detectados en la clase `AccountServic
     * **Descripción:** El método tiene como nombre 'rm'.
     * **Problema:** No describe correctamente la intención del método, obligando a leer su código para adivinarlo. Esto aumenta el tiempo necesario para mantener o modificar el código. Además, rompe la consistencia con el resto de nombres de métodos, que siguiendo el patrón se esperaría que se llamara, por ejemplo, deleteAccount, por lo que se pierde predecibilidad.
     * **Cómo solucionarlo:** Cambiar el nombre del método a uno más descriptivo y apropiado como deleteAccount.
+
+* **Refactorización realizada:**
+    Se ha cambiado el nombre del método `rm` a `deleteAccount`, siendo así más descriptivo y apropiado.
+
+    ![Uncommunicative Name - Refactorización](/img/bad_smell_14_refactor.png)
 
 ### Bad Smell 15: Generic Exception Catching (Captura genérica de excepciones)
 * **Ubicación:** `LoanController.java`, `DashboardController.java` y `TransferController.java` - bloques `catch (Exception e)`
