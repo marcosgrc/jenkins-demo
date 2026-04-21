@@ -165,6 +165,12 @@ He realizado las pruebas unitarias para asegurar que el proceso de sacar dinero 
 | 2  | [Refactorización: Switch Statement](https://github.com/Albermg27/cs-2026-grupo-2/commit/bbeaf665b9a5c019e3a790fc5a3d43784a9374dd)  |
 | 3  | [Refactorización: Inappropriate Intimacy](https://github.com/Albermg27/cs-2026-grupo-2/commit/0409e6d3e8f86ddae5d1a11f8d3ce2faefde9e16)  |
 | 4  | [Prueba de sistema: No se puede realizar una transferencia si no hay saldo suficiente](https://github.com/Albermg27/cs-2026-grupo-2/commit/2dcff62078ce661896a863fb71a18fdf1f6f0074)  |
+#### **Alumno 7 - Laura Pineda Ballesteros**
 
+En esta práctica he ampliado la batería de pruebas E2E en `TransferE2ETest`, añadiendo el escenario que valida que no se puede transferir a una cuenta destino inexistente. Además, he ajustado el `setup` del test para limpiar también las notificaciones antes de cada ejecución, garantizando el aislamiento entre pruebas y evitando interferencias por datos residuales.
+
+| Nº  |                                                         Commits                                                          |
+| :-: | :----------------------------------------------------------------------------------------------------------------------: |
+|  1  | [Test E2E: No se puede realizar una transferencia a una cuenta inexistente + ajuste de setup] (https://github.com/Albermg27/cs-2026-grupo-2/commit/d1c5f8f83b4c2cbc649ebba61be2f68198f9d5f2) |
 
 ---
