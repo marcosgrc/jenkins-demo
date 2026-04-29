@@ -24,7 +24,7 @@ pipeline {
         stage('Tests Unitarios') {
             steps {
                 echo 'Ejecutando tests con JUnit...'
-                sh 'mvn test'
+                sh 'mvn test -P unit-tests'
             }
         }
 
