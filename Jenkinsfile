@@ -1,21 +1,20 @@
 pipeline {
     agent any
 
-    tools {
-        // Usa el nombre exacto que le pusiste en 'Global Tool Configuration'
-        maven 'maven' 
+    triggers {
+        // Revisa si hay cambios en el repositorio cada minuto
+        pollSCM('* * * * *') 
     }
-    environment {
-        // Forzamos el idioma a nivel de sistema operativo del contenedor
-        LANG = 'es_ES.UTF-8'
-        LC_ALL = 'es_ES.UTF-8'
-        MAVEN_OPTS = '-Duser.language=es -Duser.country=ES'
+
+    tools {
+        // Configuración de herramientas
+        maven 'maven' 
     }
 
     stages {
         stage('Checkout') {
             steps {
-                // Esto descarga el código de tu repositorio
+                // Descarga el código del repositorio
                 checkout scm
             }
         }
@@ -45,6 +44,7 @@ pipeline {
     post {
         always {
             echo 'Limpiando el espacio de trabajo...'
+            cleanWs()
         }
         success {
             echo '¡El Pipeline ha finalizado con éxito!'
