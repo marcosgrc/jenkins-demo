@@ -40,6 +40,7 @@ import static org.mockito.Mockito.*;
 public class AccountServiceTest {
 
     static {
+        // Configura el idioma por defecto del programa
         Locale.setDefault(Locale.forLanguageTag("es-ES"));
     }
 
