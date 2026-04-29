@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     triggers {
-        // Revisa si hay cambios en el repositorio cada minuto
-        pollSCM('* * * * *') 
+        // Ejecuta el pipeline periodicamente
+        cron('H/0 2 * * *') //Todos los días a las 2:00 AM
     }
 
     tools {
