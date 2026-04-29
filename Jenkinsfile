@@ -3,7 +3,7 @@ pipeline {
 
     triggers {
         // Ejecuta el pipeline periodicamente
-        cron('H/0 2 * * *') //Todos los días a las 2:00 AM
+        cron('0 2 * * *') //Todos los días a las 2:00 AM
     }
 
     tools {
