@@ -5,6 +5,12 @@ pipeline {
         // Usa el nombre exacto que le pusiste en 'Global Tool Configuration'
         maven 'maven' 
     }
+    environment {
+        // Forzamos el idioma a nivel de sistema operativo del contenedor
+        LANG = 'es_ES.UTF-8'
+        LC_ALL = 'es_ES.UTF-8'
+        MAVEN_OPTS = '-Duser.language=es -Duser.country=ES'
+    }
 
     stages {
         stage('Checkout') {
@@ -24,7 +30,7 @@ pipeline {
         stage('Tests Unitarios') {
             steps {
                 echo 'Ejecutando tests con JUnit...'
-                sh 'mvn test -Duser.language=es -Duser.country=ES -P unit-tests'
+                sh 'mvn test -P unit-tests'
             }
         }
 
